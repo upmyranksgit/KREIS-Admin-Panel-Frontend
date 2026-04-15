@@ -10,7 +10,7 @@ import { authService } from '../../services/authService';
 const BranchSelect = ({ 
   value, 
   onChange, 
-  placeholder = 'Select a branch',
+  placeholder = 'Select a principal',
   instituteId = null,
   disabled = false,
   allowClear = true,

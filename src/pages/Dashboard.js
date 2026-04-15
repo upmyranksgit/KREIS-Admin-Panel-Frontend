@@ -21,7 +21,7 @@ const Dashboard = () => {
     },
     branchadmin: {
       basePath: '/branch',
-      title: 'Branch Dashboard'
+      title: 'Principal Dashboard'
     },
     teacher: {
       basePath: '/institute',
@@ -29,7 +29,7 @@ const Dashboard = () => {
     },
     student: {
       basePath: '/branch',
-      title: 'Branch Dashboard'
+      title: 'Principal Dashboard'
     }
   };
 

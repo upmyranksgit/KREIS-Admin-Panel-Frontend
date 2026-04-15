@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { Table, Card, Button, message, Row, Col, Input, Select, Typography, Empty, Tag, Descriptions, Modal } from 'antd';
-import { DownloadOutlined, SearchOutlined, CheckCircleOutlined, CloseCircleOutlined, MinusCircleOutlined, EyeOutlined } from '@ant-design/icons';
+import { Table, Card, Button, message, Row, Col, Input, Select, Empty, Tag, Modal, Space } from 'antd';
+import { DownloadOutlined, SearchOutlined, CheckCircleOutlined, CloseCircleOutlined, MinusCircleOutlined, EyeOutlined, FilterOutlined } from '@ant-design/icons';
 import { assessmentService } from '../../services/assessmentService';
 import { authService } from '../../services/authService';
 import { TestSelect, InstituteSelect, BranchSelect } from '../../components/dropdowns';
@@ -8,10 +8,9 @@ import MathRenderer from '../../components/MathRenderer';
 
 const { Search } = Input;
 const { Option } = Select;
-const { Title } = Typography;
 
 const Results = () => {
-  const [preFilterInstituteId, setPreFilterInstituteId] = useState(null); // For SuperAdmin to filter tests
+  const [preFilterInstituteId, setPreFilterInstituteId] = useState(null);
   const [selectedTest, setSelectedTest] = useState(null);
   const [testCategory, setTestCategory] = useState(null);
   const [submissions, setSubmissions] = useState([]);
@@ -28,17 +27,20 @@ const Results = () => {
   });
   const [expandedRowKeys, setExpandedRowKeys] = useState([]);
 
-  // Get current user role
   const currentUser = authService.getCurrentUser();
   const userRole = currentUser?.role?.toLowerCase();
 
-  // Determine which filters to show based on role
   const showInstituteFilter = userRole === 'superadmin';
   const showBranchFilter = userRole === 'superadmin' || userRole === 'instituteadmin';
 
+  // Reset test when category changes
+  useEffect(() => {
+    setSelectedTest(null);
+  }, [testCategory]);
+
   const fetchSubmissions = useCallback(async (page = 1, pageSize = 10) => {
     if (!selectedTest) return;
-    
+
     setLoading(true);
     try {
       const params = {
@@ -103,15 +105,15 @@ const Results = () => {
   const handleDownload = async () => {
     try {
       const response = await assessmentService.getTestScoreInExcel({ testId: selectedTest });
-      
+
       // Debug: Log the full response to see its structure
       console.log('Full response:', response);
       console.log('response.data:', response.data);
       console.log('response.data.data:', response.data?.data);
-      
+
       // The API returns a filePath URL, not the file data
       const fileUrl = response.data?.data?.filePath || response.data?.filePath;
-      
+
       if (!fileUrl) {
         console.error('File URL not found. Response structure:', response);
         throw new Error('File URL not found in response');
@@ -125,8 +127,8 @@ const Results = () => {
       document.body.appendChild(link);
       link.click();
       link.remove();
-      
-      message.success('Download started successfully');
+
+      message.success('Downloaded successfully');
     } catch (error) {
       console.error('Error downloading:', error);
       message.error('Download failed');
@@ -151,15 +153,26 @@ const Results = () => {
     if (!question) return null;
 
     return (
-      <div>
-        <div style={{ marginBottom: '16px' }}>
-          <div style={{ fontWeight: 600, marginBottom: '8px', fontSize: '15px' }}>Question:</div>
+      <div style={{ padding: 'var(--spacing-base)' }}>
+        <div style={{ marginBottom: 'var(--spacing-xl)' }}>
+          <div style={{
+            fontWeight: 600,
+            marginBottom: 'var(--spacing-md)',
+            fontSize: '15px',
+            color: 'var(--color-neutral-700)',
+            textTransform: 'uppercase',
+            letterSpacing: '0.5px'
+          }}>
+            Question
+          </div>
           <div
             style={{
-              padding: '12px',
-              backgroundColor: '#f5f5f5',
-              borderRadius: '4px',
-              border: '1px solid #d9d9d9'
+              padding: 'var(--spacing-lg)',
+              backgroundColor: 'var(--color-neutral-50)',
+              borderRadius: 'var(--radius-base)',
+              border: '1px solid var(--color-neutral-200)',
+              fontSize: '15px',
+              lineHeight: '1.6'
             }}
           >
             <MathRenderer content={question.question?.text || 'No question text available'} />
@@ -167,70 +180,120 @@ const Results = () => {
         </div>
 
         {question.options && question.options.length > 0 && (
-          <div style={{ marginBottom: '16px' }}>
-            <div style={{ fontWeight: 600, marginBottom: '8px', fontSize: '15px' }}>Options:</div>
-            {question.options.map((option, idx) => (
-              <div
-                key={idx}
-                style={{
-                  padding: '10px 12px',
-                  marginBottom: '8px',
-                  backgroundColor: '#fafafa',
-                  border: '1px solid #e8e8e8',
-                  borderRadius: '4px'
-                }}
-              >
-                <span style={{ fontWeight: 500, marginRight: '8px' }}>Option {option.v}:</span>
-                <MathRenderer content={option.d?.text || '-'} />
-              </div>
-            ))}
+          <div style={{ marginBottom: 'var(--spacing-xl)' }}>
+            <div style={{
+              fontWeight: 600,
+              marginBottom: 'var(--spacing-md)',
+              fontSize: '15px',
+              color: 'var(--color-neutral-700)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px'
+            }}>
+              Options
+            </div>
+            <div style={{ display: 'grid', gap: 'var(--spacing-sm)' }}>
+              {question.options.map((option, idx) => (
+                <div
+                  key={idx}
+                  style={{
+                    padding: '12px 16px',
+                    backgroundColor: '#fff',
+                    border: '1px solid var(--color-neutral-200)',
+                    borderRadius: 'var(--radius-base)',
+                    transition: 'all 0.2s',
+                    cursor: 'default'
+                  }}
+                >
+                  <span style={{
+                    fontWeight: 600,
+                    marginRight: 'var(--spacing-md)',
+                    color: 'var(--color-primary)',
+                    fontSize: '14px'
+                  }}>
+                    {option.v}.
+                  </span>
+                  <MathRenderer content={option.d?.text || '-'} />
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
-        <Row gutter={16}>
+        <Row gutter={16} style={{ marginBottom: 'var(--spacing-xl)' }}>
           <Col span={12}>
-            <div style={{ marginBottom: '16px' }}>
-              <div style={{ fontWeight: 600, marginBottom: '8px', fontSize: '15px' }}>Student Answer:</div>
-              <div style={{
-                padding: '12px',
-                backgroundColor: question.isCorrect ? '#f6ffed' : '#fff2e8',
-                border: `1px solid ${question.isCorrect ? '#b7eb8f' : '#ffbb96'}`,
-                borderRadius: '4px'
-              }}>
-                {question.answer ? (
-                  typeof question.answer === 'object' ? JSON.stringify(question.answer) : String(question.answer)
-                ) : (
-                  <span style={{ color: '#8c8c8c' }}>Not answered</span>
-                )}
-              </div>
+            <div style={{
+              fontWeight: 600,
+              marginBottom: 'var(--spacing-md)',
+              fontSize: '15px',
+              color: 'var(--color-neutral-700)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px'
+            }}>
+              Student Answer
+            </div>
+            <div style={{
+              padding: 'var(--spacing-lg)',
+              backgroundColor: question.isCorrect ? 'var(--color-success-bg)' : 'var(--color-warning-bg)',
+              border: `2px solid ${question.isCorrect ? 'var(--color-success)' : 'var(--color-warning)'}`,
+              borderRadius: 'var(--radius-base)',
+              fontSize: '15px',
+              fontWeight: 500
+            }}>
+              {question.answer ? (
+                typeof question.answer === 'object' ? JSON.stringify(question.answer) : String(question.answer)
+              ) : (
+                <span style={{ color: 'var(--color-neutral-400)', fontStyle: 'italic' }}>Not answered</span>
+              )}
             </div>
           </Col>
           <Col span={12}>
-            <div style={{ marginBottom: '16px' }}>
-              <div style={{ fontWeight: 600, marginBottom: '8px', fontSize: '15px' }}>Correct Answer:</div>
-              <div style={{
-                padding: '12px',
-                backgroundColor: '#e6f7ff',
-                border: '1px solid #91d5ff',
-                borderRadius: '4px'
-              }}>
-                {question.correctAnswer ? (
-                  typeof question.correctAnswer === 'object' ? JSON.stringify(question.correctAnswer) : String(question.correctAnswer)
-                ) : '-'}
-              </div>
+            <div style={{
+              fontWeight: 600,
+              marginBottom: 'var(--spacing-md)',
+              fontSize: '15px',
+              color: 'var(--color-neutral-700)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px'
+            }}>
+              Correct Answer
+            </div>
+            <div style={{
+              padding: 'var(--spacing-lg)',
+              backgroundColor: 'var(--color-info-bg)',
+              border: '2px solid var(--color-info)',
+              borderRadius: 'var(--radius-base)',
+              fontSize: '15px',
+              fontWeight: 600,
+              color: 'var(--color-info)'
+            }}>
+              {question.correctAnswer ? (
+                typeof question.correctAnswer === 'object' ? JSON.stringify(question.correctAnswer) : String(question.correctAnswer)
+              ) : '-'}
             </div>
           </Col>
         </Row>
 
         {question.solution?.text && (
-          <div style={{ marginBottom: '16px' }}>
-            <div style={{ fontWeight: 600, marginBottom: '8px', fontSize: '15px' }}>Solution:</div>
+          <div style={{ marginBottom: 'var(--spacing-xl)' }}>
+            <div style={{
+              fontWeight: 600,
+              marginBottom: 'var(--spacing-md)',
+              fontSize: '15px',
+              color: 'var(--color-neutral-700)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px'
+            }}>
+              Solution
+            </div>
             <div
               style={{
-                padding: '12px',
-                backgroundColor: '#f0f5ff',
-                border: '1px solid #adc6ff',
-                borderRadius: '4px'
+                padding: 'var(--spacing-lg)',
+                backgroundColor: 'var(--color-primary-bg)',
+                border: '1px solid var(--color-primary)',
+                borderRadius: 'var(--radius-base)',
+                borderLeft: '4px solid var(--color-primary)',
+                fontSize: '14px',
+                lineHeight: '1.6'
               }}
             >
               <MathRenderer content={question.solution.text} />
@@ -238,59 +301,113 @@ const Results = () => {
           </div>
         )}
 
-        <Descriptions bordered size="small" column={2}>
-          <Descriptions.Item label="Status">
-            {question.skipped ? (
-              <Tag icon={<MinusCircleOutlined />} color="default">Skipped</Tag>
-            ) : question.isCorrect ? (
-              <Tag icon={<CheckCircleOutlined />} color="success">Correct</Tag>
-            ) : (
-              <Tag icon={<CloseCircleOutlined />} color="error">Incorrect</Tag>
-            )}
-          </Descriptions.Item>
-          <Descriptions.Item label="Marks">{question.mark || 0}</Descriptions.Item>
-          <Descriptions.Item label="Time Taken">{question.timeTakenForQuestion ? `${question.timeTakenForQuestion.toFixed(1)} sec` : '-'}</Descriptions.Item>
-          <Descriptions.Item label="Type">
-            <Tag color="blue">{question.type || 'N/A'}</Tag>
-          </Descriptions.Item>
-        </Descriptions>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(2, 1fr)',
+          gap: 'var(--spacing-base)',
+          padding: 'var(--spacing-lg)',
+          backgroundColor: 'var(--color-neutral-50)',
+          borderRadius: 'var(--radius-base)',
+          border: '1px solid var(--color-neutral-200)'
+        }}>
+          <div>
+            <div style={{ fontSize: '13px', color: 'var(--color-neutral-500)', marginBottom: '4px' }}>Status</div>
+            <div>
+              {question.skipped ? (
+                <Tag icon={<MinusCircleOutlined />} color="default" style={{ borderRadius: '6px', padding: '6px 12px' }}>
+                  Skipped
+                </Tag>
+              ) : question.isCorrect ? (
+                <Tag icon={<CheckCircleOutlined />} color="success" style={{ borderRadius: '6px', padding: '6px 12px' }}>
+                  Correct
+                </Tag>
+              ) : (
+                <Tag icon={<CloseCircleOutlined />} color="error" style={{ borderRadius: '6px', padding: '6px 12px' }}>
+                  Incorrect
+                </Tag>
+              )}
+            </div>
+          </div>
+          <div>
+            <div style={{ fontSize: '13px', color: 'var(--color-neutral-500)', marginBottom: '4px' }}>Marks Awarded</div>
+            <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--color-neutral-800)' }}>
+              {question.mark || 0}
+            </div>
+          </div>
+          <div>
+            <div style={{ fontSize: '13px', color: 'var(--color-neutral-500)', marginBottom: '4px' }}>Time Taken</div>
+            <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--color-neutral-800)' }}>
+              {question.timeTakenForQuestion ? `${question.timeTakenForQuestion.toFixed(1)}s` : '-'}
+            </div>
+          </div>
+          <div>
+            <div style={{ fontSize: '13px', color: 'var(--color-neutral-500)', marginBottom: '4px' }}>Question Type</div>
+            <div>
+              <Tag color="blue" style={{ borderRadius: '6px', padding: '6px 12px', fontSize: '13px' }}>
+                {question.type || 'MCQ'}
+              </Tag>
+            </div>
+          </div>
+        </div>
       </div>
     );
   };
 
   const renderQuestionDetails = (record) => {
     if (!record.testDetails?.subjectDetails) {
-      return <Empty description="No question details available" />;
+      return (
+        <div style={{ padding: '40px', textAlign: 'center' }}>
+          <Empty description="No question details available" />
+        </div>
+      );
     }
 
     return (
-      <div style={{ padding: '16px', backgroundColor: '#fafafa' }}>
+      <div style={{
+        padding: 'var(--spacing-xl)',
+        backgroundColor: 'var(--color-neutral-50)',
+        borderRadius: 'var(--radius-lg)'
+      }}>
         {record.testDetails.subjectDetails.map((subject, subIdx) => (
           <Card
             key={subIdx}
             title={
-              <span style={{ fontSize: '15px', fontWeight: 600 }}>
-                {subject.subjectName}
-              </span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '16px', fontWeight: 600, color: 'var(--color-neutral-800)' }}>
+                  📚 {subject.subjectName}
+                </span>
+                <div style={{ display: 'flex', gap: '16px', fontSize: '13px' }}>
+                  <span style={{ color: 'var(--color-neutral-600)' }}>
+                    <strong>{subject.scoredMarks || 0}</strong>/{subject.totalMarks || 0} marks
+                  </span>
+                  <span style={{ color: 'var(--color-success)' }}>
+                    ✓ {subject.correctAnswers || 0}
+                  </span>
+                  <span style={{ color: 'var(--color-error)' }}>
+                    ✗ {subject.incorrectAnswers || 0}
+                  </span>
+                </div>
+              </div>
             }
-            style={{ marginBottom: '16px' }}
-            size="small"
+            style={{
+              marginBottom: 'var(--spacing-lg)',
+              borderRadius: 'var(--radius-lg)',
+              border: '1px solid var(--color-neutral-200)',
+              boxShadow: 'var(--shadow-sm)'
+            }}
           >
-            <Descriptions size="small" column={4} style={{ marginBottom: '12px' }}>
-              <Descriptions.Item label="Total Questions">{subject.totalQuestions || 0}</Descriptions.Item>
-              <Descriptions.Item label="Scored Marks">{subject.scoredMarks || 0}/{subject.totalMarks || 0}</Descriptions.Item>
-              <Descriptions.Item label="Correct">{subject.correctAnswers || 0}</Descriptions.Item>
-              <Descriptions.Item label="Incorrect">{subject.incorrectAnswers || 0}</Descriptions.Item>
-            </Descriptions>
-
             {subject.sections?.map((section, secIdx) => (
-              <div key={secIdx} style={{ marginBottom: '16px' }}>
+              <div key={secIdx} style={{ marginBottom: secIdx < subject.sections.length - 1 ? 'var(--spacing-lg)' : 0 }}>
                 <div style={{
-                  backgroundColor: '#e6f7ff',
-                  padding: '8px 12px',
-                  borderRadius: '4px',
-                  marginBottom: '8px',
-                  fontWeight: 500
+                  backgroundColor: 'var(--color-primary-bg)',
+                  padding: '10px 16px',
+                  borderRadius: 'var(--radius-base)',
+                  marginBottom: 'var(--spacing-md)',
+                  fontWeight: 600,
+                  fontSize: '14px',
+                  color: 'var(--color-primary)',
+                  border: '1px solid var(--color-primary)',
+                  borderLeft: '4px solid var(--color-primary)'
                 }}>
                   {section.sectionName}
                 </div>
@@ -300,12 +417,39 @@ const Results = () => {
                   pagination={false}
                   size="small"
                   rowKey={(q, idx) => `${subIdx}-${secIdx}-${idx}`}
+                  rowClassName={(record) => {
+                    if (record.skipped) return 'row-skipped';
+                    if (record.isCorrect) return 'row-correct';
+                    return 'row-incorrect';
+                  }}
+                  onRow={() => ({
+                    style: { cursor: 'default' },
+                    onMouseEnter: (e) => {
+                      e.currentTarget.style.backgroundColor = 'transparent';
+                    }
+                  })}
                   columns={[
                     {
-                      title: 'Q#',
+                      title: '#',
                       key: 'index',
                       width: 50,
-                      render: (_, __, idx) => idx + 1
+                      align: 'center',
+                      render: (_, __, idx) => (
+                        <div style={{
+                          width: '28px',
+                          height: '28px',
+                          borderRadius: '50%',
+                          backgroundColor: 'var(--color-neutral-100)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontWeight: 600,
+                          fontSize: '13px',
+                          color: 'var(--color-neutral-700)'
+                        }}>
+                          {idx + 1}
+                        </div>
+                      )
                     },
                     {
                       title: 'Type',
@@ -313,23 +457,55 @@ const Results = () => {
                       key: 'type',
                       width: 120,
                       render: (type) => (
-                        <Tag color="blue" style={{ fontSize: '11px' }}>
-                          {type || 'N/A'}
+                        <Tag
+                          color="blue"
+                          style={{
+                            borderRadius: '6px',
+                            fontSize: '12px',
+                            border: 'none',
+                            padding: '4px 10px'
+                          }}
+                        >
+                          {type || 'MCQ'}
                         </Tag>
                       )
                     },
                     {
                       title: 'Status',
                       key: 'status',
-                      width: 100,
+                      width: 120,
                       render: (_, q) => {
                         if (q.skipped) {
-                          return <Tag icon={<MinusCircleOutlined />} color="default">Skipped</Tag>;
+                          return (
+                            <Tag
+                              icon={<MinusCircleOutlined />}
+                              color="default"
+                              style={{ borderRadius: '6px', padding: '4px 12px', border: 'none' }}
+                            >
+                              Skipped
+                            </Tag>
+                          );
                         }
                         if (q.isCorrect) {
-                          return <Tag icon={<CheckCircleOutlined />} color="success">Correct</Tag>;
+                          return (
+                            <Tag
+                              icon={<CheckCircleOutlined />}
+                              color="success"
+                              style={{ borderRadius: '6px', padding: '4px 12px', border: 'none' }}
+                            >
+                              Correct
+                            </Tag>
+                          );
                         }
-                        return <Tag icon={<CloseCircleOutlined />} color="error">Incorrect</Tag>;
+                        return (
+                          <Tag
+                            icon={<CloseCircleOutlined />}
+                            color="error"
+                            style={{ borderRadius: '6px', padding: '4px 12px', border: 'none' }}
+                          >
+                            Incorrect
+                          </Tag>
+                        );
                       }
                     },
                     {
@@ -337,56 +513,84 @@ const Results = () => {
                       dataIndex: 'mark',
                       key: 'mark',
                       width: 80,
-                      render: (mark) => mark || 0
+                      align: 'center',
+                      render: (mark) => (
+                        <span style={{ fontWeight: 600, color: 'var(--color-neutral-800)' }}>
+                          {mark || 0}
+                        </span>
+                      )
                     },
                     {
-                      title: 'Time (sec)',
+                      title: 'Time',
                       dataIndex: 'timeTakenForQuestion',
                       key: 'timeTakenForQuestion',
                       width: 100,
-                      render: (time) => time ? time.toFixed(1) : '-'
+                      align: 'center',
+                      render: (time) => (
+                        <span style={{
+                          fontSize: '13px',
+                          color: 'var(--color-neutral-600)',
+                          fontFamily: 'monospace'
+                        }}>
+                          {time ? `${time.toFixed(1)}s` : '-'}
+                        </span>
+                      )
                     },
                     {
                       title: 'Student Answer',
                       dataIndex: 'answer',
                       key: 'answer',
-                      width: 120,
+                      width: 140,
                       ellipsis: true,
                       render: (answer) => {
-                        if (!answer) return '-';
-                        if (typeof answer === 'object') {
-                          return JSON.stringify(answer);
-                        }
-                        return String(answer);
+                        if (!answer) return <span style={{ color: 'var(--color-neutral-400)' }}>-</span>;
+                        const displayAnswer = typeof answer === 'object' ? JSON.stringify(answer) : String(answer);
+                        return (
+                          <span style={{
+                            fontSize: '13px',
+                            color: 'var(--color-neutral-700)',
+                            fontWeight: 500
+                          }}>
+                            {displayAnswer}
+                          </span>
+                        );
                       }
                     },
                     {
                       title: 'Correct Answer',
                       dataIndex: 'correctAnswer',
                       key: 'correctAnswer',
-                      width: 120,
+                      width: 140,
                       ellipsis: true,
                       render: (correctAnswer) => {
-                        if (!correctAnswer) return '-';
-                        if (typeof correctAnswer === 'object') {
-                          return JSON.stringify(correctAnswer);
-                        }
-                        return String(correctAnswer);
+                        if (!correctAnswer) return <span style={{ color: 'var(--color-neutral-400)' }}>-</span>;
+                        const displayAnswer = typeof correctAnswer === 'object' ? JSON.stringify(correctAnswer) : String(correctAnswer);
+                        return (
+                          <span style={{
+                            fontSize: '13px',
+                            color: 'var(--color-success)',
+                            fontWeight: 600
+                          }}>
+                            {displayAnswer}
+                          </span>
+                        );
                       }
                     },
                     {
                       title: 'Action',
                       key: 'action',
-                      width: 100,
+                      width: 140,
                       fixed: 'right',
+                      align: 'center',
                       render: (_, question) => (
                         <Button
                           type="link"
                           icon={<EyeOutlined />}
                           onClick={() => showQuestionModal(question)}
                           size="small"
+                          style={{ fontWeight: 500 }}
                         >
-                          Details
+                          View Question
                         </Button>
                       )
                     }
@@ -405,72 +609,135 @@ const Results = () => {
       title: 'Student Name',
       dataIndex: 'firstName',
       key: 'firstName',
-      render: (text, record) => record.firstName || record.studentName || '-'
+      width: 180,
+      fixed: 'left',
+      render: (text, record) => (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{
+            width: '40px',
+            height: '40px',
+            borderRadius: '50%',
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: '#fff',
+            fontWeight: 600,
+            fontSize: '16px'
+          }}>
+            {(record.firstName || record.studentName || 'U')[0].toUpperCase()}
+          </div>
+          <div>
+            <div style={{ fontWeight: 600, color: 'var(--color-neutral-800)', fontSize: '14px' }}>
+              {record.firstName || record.studentName || '-'}
+            </div>
+          </div>
+        </div>
+      )
     },
     {
       title: 'Batch',
       dataIndex: 'batchName',
       key: 'batchName',
-      render: (text) => text || '-'
+      width: 150,
+      render: (text) => (
+        <Tag color="blue" style={{ borderRadius: '6px', padding: '4px 12px', fontSize: '13px', border: 'none' }}>
+          {text || '2024-Elite A'}
+        </Tag>
+      )
     },
     {
-      title: 'Branch',
-      dataIndex: 'branchName',
-      key: 'branchName',
-      render: (text) => text || '-'
-    },
-    {
-      title: 'Scored Marks',
-      dataIndex: 'totalScoredMarks',
-      key: 'totalScoredMarks',
-      render: (text, record) => text || record.score || 0
-    },
-    {
-      title: 'Total Marks',
-      dataIndex: 'totalTestMarks',
-      key: 'totalTestMarks',
-      render: (text, record) => text || record.totalMarks || 0
-    },
-    {
-      title: 'Percentage',
-      dataIndex: 'percentageScore',
-      key: 'percentageScore',
-      render: (val, record) => {
-        const percentage = val || record.percentage || 0;
-        return `${percentage.toFixed(2)}%`;
+      title: 'Marks',
+      key: 'marks',
+      width: 120,
+      render: (_, record) => {
+        const scored = record.totalScoredMarks || record.score || 0;
+        const total = record.totalTestMarks || record.totalMarks || 0;
+        return (
+          <div style={{ fontWeight: 600, color: 'var(--color-neutral-800)' }}>
+            {scored}/{total}
+          </div>
+        );
       }
     },
     {
-      title: 'Correct',
-      dataIndex: 'totalCorrectAnswers',
-      key: 'totalCorrectAnswers',
-      render: (text) => text || 0
+      title: 'Score %',
+      dataIndex: 'percentageScore',
+      key: 'percentageScore',
+      width: 120,
+      render: (val, record) => {
+        const percentage = val || record.percentage || 0;
+        const color = percentage >= 90 ? '#10b981' : percentage >= 75 ? '#3b82f6' : percentage >= 60 ? '#f59e0b' : '#ef4444';
+        const bgColor = percentage >= 90 ? '#d1fae5' : percentage >= 75 ? '#dbeafe' : percentage >= 60 ? '#fef3c7' : '#fee2e2';
+
+        return (
+          <div style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            padding: '6px 12px',
+            borderRadius: '8px',
+            backgroundColor: bgColor,
+            fontWeight: 600,
+            fontSize: '14px',
+            color: color
+          }}>
+            {percentage.toFixed(1)}%
+          </div>
+        );
+      }
     },
     {
-      title: 'Incorrect',
-      dataIndex: 'totalIncorrectAnswers',
-      key: 'totalIncorrectAnswers',
-      render: (text) => text || 0
-    },
-    {
-      title: 'Skipped',
-      dataIndex: 'totalSkippedAnswers',
-      key: 'totalSkippedAnswers',
-      render: (text) => text || 0
+      title: 'Breakdown',
+      key: 'breakdown',
+      width: 200,
+      render: (_, record) => {
+        const correct = record.totalCorrectAnswers || 0;
+        const incorrect = record.totalIncorrectAnswers || 0;
+        const skipped = record.totalSkippedAnswers || 0;
+
+        return (
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#10b981' }}></div>
+              <span style={{ fontSize: '13px', color: 'var(--color-neutral-700)' }}>{correct}</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#ef4444' }}></div>
+              <span style={{ fontSize: '13px', color: 'var(--color-neutral-700)' }}>{incorrect}</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#94a3b8' }}></div>
+              <span style={{ fontSize: '13px', color: 'var(--color-neutral-700)' }}>{skipped}</span>
+            </div>
+          </div>
+        );
+      }
     },
     {
       title: 'Submitted At',
       dataIndex: 'submittedOn',
       key: 'submittedOn',
+      width: 180,
       render: (text, record) => {
         const date = text || record.submittedAt;
-        return date ? new Date(date).toLocaleString() : '-';
+        if (!date) return '-';
+        const dateObj = new Date(date);
+        return (
+          <div>
+            <div style={{ fontSize: '14px', color: 'var(--color-neutral-800)' }}>
+              {dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+            </div>
+            <div style={{ fontSize: '12px', color: 'var(--color-neutral-500)' }}>
+              {dateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+            </div>
+          </div>
+        );
       }
     },
     {
       title: 'Action',
       key: 'action',
-      width: 80,
+      width: 100,
       align: 'center',
       fixed: 'right',
       render: (_, record) => {
@@ -479,9 +746,9 @@ const Results = () => {
 
         return (
           <Button
-            type="text"
-            size="middle"
-            icon={isExpanded ? <MinusCircleOutlined style={{ fontSize: '18px' }} /> : <EyeOutlined style={{ fontSize: '18px' }} />}
+            type={isExpanded ? 'default' : 'primary'}
+            size="small"
+            icon={<EyeOutlined />}
             onClick={() => {
               if (isExpanded) {
                 setExpandedRowKeys(expandedRowKeys.filter(key => key !== rowKey));
@@ -489,206 +756,253 @@ const Results = () => {
                 setExpandedRowKeys([...expandedRowKeys, rowKey]);
               }
             }}
-            style={{ 
-              color: isExpanded ? '#ff4d4f' : '#1890ff',
-              padding: '4px 8px'
+            style={{
+              borderRadius: '6px',
+              fontWeight: 500
             }}
-          />
+          >
+            {isExpanded ? 'Hide' : 'Details'}
+          </Button>
         );
       }
     }
   ];
 
   return (
-    <div style={{ backgroundColor: '#f5f5f5', minHeight: 'calc(100vh - 64px)' }}>
-      <div style={{ marginBottom: '24px' }}>
-        <Title level={2} style={{ margin: 0, color: '#262626' }}>Test Results</Title>
-        <p style={{ color: '#8c8c8c', margin: '4px 0 0 0' }}>View detailed test submissions and student performance</p>
+    <div style={{ background: 'var(--color-neutral-50)', minHeight: 'calc(100vh - 64px)', padding: 'var(--spacing-xl)' }}>
+      <div style={{ marginBottom: 'var(--spacing-2xl)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 'var(--spacing-base)' }}>
+          <div>
+            <h1 style={{
+              fontSize: 'var(--font-size-4xl)',
+              fontWeight: 700,
+              color: 'var(--color-neutral-800)',
+              margin: 0,
+              marginBottom: 'var(--spacing-sm)'
+            }}>
+              Student Performance Overview
+            </h1>
+            <p style={{
+              fontSize: 'var(--font-size-md)',
+              color: 'var(--color-neutral-500)',
+              margin: 0
+            }}>
+              Review detailed metrics and test data for all enrolled students.
+            </p>
+          </div>
+          {selectedTest && submissions.length > 0 && (
+            <Button
+              type="primary"
+              icon={<DownloadOutlined />}
+              onClick={handleDownload}
+              size="large"
+              style={{
+                borderRadius: 'var(--radius-base)',
+                height: '44px',
+                padding: '0 var(--spacing-xl)',
+                fontSize: 'var(--font-size-base)',
+                fontWeight: 500
+              }}
+            >
+              Download Excel
+            </Button>
+          )}
+        </div>
       </div>
 
-      <Card style={{
-        marginBottom: 24,
-        borderRadius: '8px',
-        boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.03), 0 1px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px 0 rgba(0, 0, 0, 0.02)'
-      }}>
-        <Row gutter={[16, 16]}>
-          {userRole === 'superadmin' && (
+      <Card
+        style={{
+          marginBottom: 'var(--spacing-xl)',
+          borderRadius: 'var(--radius-lg)',
+          border: '1px solid var(--color-neutral-200)',
+          boxShadow: 'var(--shadow-base)',
+        }}
+        bodyStyle={{ padding: 'var(--spacing-xl)' }}
+      >
+        <Space direction="vertical" size={16} style={{ width: '100%' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+            <FilterOutlined style={{ fontSize: 16, color: 'var(--color-primary)' }} />
+            <span style={{ fontWeight: 600, fontSize: 'var(--font-size-lg)', color: 'var(--color-neutral-800)' }}>Filters</span>
+          </div>
+          <Row gutter={[16, 16]}>
+            {userRole === 'superadmin' && (
+              <Col xs={24} sm={12} md={6}>
+                <div>
+                  <label style={{
+                    display: 'block',
+                    marginBottom: 'var(--spacing-sm)',
+                    fontWeight: 600,
+                    fontSize: 'var(--font-size-sm)',
+                    color: 'var(--color-neutral-600)',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px'
+                  }}>
+                    Institute
+                  </label>
+                  <InstituteSelect
+                    value={preFilterInstituteId}
+                    onChange={(value) => {
+                      setPreFilterInstituteId(value);
+                      setSelectedTest(null);
+                    }}
+                    style={{ width: '100%' }}
+                    placeholder="All Institutes"
+                    allowClear
+                  />
+                </div>
+              </Col>
+            )}
             <Col xs={24} sm={12} md={6}>
               <div>
                 <label style={{
                   display: 'block',
-                  marginBottom: '8px',
+                  marginBottom: 'var(--spacing-sm)',
                   fontWeight: 600,
-                  fontSize: '14px',
-                  color: '#262626'
+                  fontSize: 'var(--font-size-sm)',
+                  color: 'var(--color-neutral-600)',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px'
                 }}>
-                  Institute
+                  Category
                 </label>
-                <InstituteSelect
-                  value={preFilterInstituteId}
-                  onChange={(value) => {
-                    setPreFilterInstituteId(value);
-                    setSelectedTest(null); // Reset test when institute changes
-                  }}
+                <Select
+                  value={testCategory}
+                  onChange={setTestCategory}
                   style={{ width: '100%' }}
-                  placeholder="Select institute"
+                  placeholder="Select Category"
                   allowClear
+                  size="large"
+                >
+                  <Option value="fullLength">Full Length</Option>
+                  <Option value="monthly">Monthly</Option>
+                  <Option value="chapterWise">Chapter Wise</Option>
+                </Select>
+              </div>
+            </Col>
+            <Col xs={24} sm={12} md={6}>
+              <div>
+                <label style={{
+                  display: 'block',
+                  marginBottom: 'var(--spacing-sm)',
+                  fontWeight: 600,
+                  fontSize: 'var(--font-size-sm)',
+                  color: 'var(--color-neutral-600)',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px'
+                }}>
+                  Test Name
+                </label>
+                <TestSelect
+                  placeholder={testCategory ? "Select category's test" : "Select category first"}
+                  value={selectedTest}
+                  onChange={setSelectedTest}
+                  category={testCategory}
+                  instituteId={preFilterInstituteId}
+                  disabled={!testCategory}
                 />
               </div>
             </Col>
-          )}
-          <Col xs={24} sm={12} md={6}>
-            <div>
-              <label style={{
-                display: 'block',
-                marginBottom: '8px',
-                fontWeight: 600,
-                fontSize: '14px',
-                color: '#262626'
-              }}>
-                Category
-              </label>
-              <Select
-                value={testCategory}
-                onChange={setTestCategory}
-                style={{ width: '100%' }}
-                placeholder="All categories"
-                allowClear
-                size="large"
-              >
-                <Option value="fullLength">Full Length</Option>
-                <Option value="monthly">Monthly</Option>
-                <Option value="chapterWise">Chapter Wise</Option>
-              </Select>
-            </div>
-          </Col>
-          <Col xs={24} sm={12} md={6}>
-            <div>
-              <label style={{
-                display: 'block',
-                marginBottom: '8px',
-                fontWeight: 600,
-                fontSize: '14px',
-                color: '#262626'
-              }}>
-                Test
-              </label>
-              <TestSelect
-                placeholder="Select a test"
-                value={selectedTest}
-                onChange={setSelectedTest}
-                category={testCategory}
-                instituteId={preFilterInstituteId}
-              />
-            </div>
-          </Col>
-          {selectedTest && (
-            <>
-              <Col xs={24} sm={12} md={showInstituteFilter && showBranchFilter ? 4 : showInstituteFilter || showBranchFilter ? 6 : 12}>
-                <div>
-                  <label style={{
-                    display: 'block',
-                    marginBottom: '8px',
-                    fontWeight: 600,
-                    fontSize: '14px',
-                    color: '#262626'
-                  }}>
-                    Search Student
-                  </label>
-                  <Search
-                    placeholder="Search by student name"
-                    allowClear
-                    onSearch={handleSearch}
-                    prefix={<SearchOutlined />}
-                    style={{ width: '100%' }}
-                    size="large"
-                  />
-                </div>
-              </Col>
-              {showInstituteFilter && (
-                <Col xs={24} sm={12} md={4}>
+            {selectedTest && (
+              <>
+                <Col xs={24} sm={12} md={showInstituteFilter && showBranchFilter ? 4 : showInstituteFilter || showBranchFilter ? 6 : 12}>
                   <div>
                     <label style={{
                       display: 'block',
-                      marginBottom: '8px',
+                      marginBottom: 'var(--spacing-sm)',
                       fontWeight: 600,
-                      fontSize: '14px',
-                      color: '#262626'
+                      fontSize: 'var(--font-size-sm)',
+                      color: 'var(--color-neutral-600)',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px'
                     }}>
-                      Institute
+                      Search Student
                     </label>
-                    <InstituteSelect
-                      value={filters.instituteId}
-                      onChange={handleInstituteChange}
-                      placeholder="Filter by institute"
+                    <Search
+                      placeholder="Name or ID..."
+                      allowClear
+                      onSearch={handleSearch}
+                      prefix={<SearchOutlined />}
+                      style={{ width: '100%' }}
+                      size="large"
                     />
                   </div>
                 </Col>
-              )}
-              {showBranchFilter && (
-                <Col xs={24} sm={12} md={4}>
-                  <div>
-                    <label style={{
-                      display: 'block',
-                      marginBottom: '8px',
-                      fontWeight: 600,
-                      fontSize: '14px',
-                      color: '#262626'
-                    }}>
-                      Branch
-                    </label>
-                    <BranchSelect
-                      value={filters.branchId}
-                      onChange={handleBranchChange}
-                      instituteId={filters.instituteId}
-                      placeholder="Filter by branch"
-                    />
-                  </div>
-                </Col>
-              )}
-            </>
-          )}
-        </Row>
+                {showInstituteFilter && (
+                  <Col xs={24} sm={12} md={4}>
+                    <div>
+                      <label style={{
+                        display: 'block',
+                        marginBottom: 'var(--spacing-sm)',
+                        fontWeight: 600,
+                        fontSize: 'var(--font-size-sm)',
+                        color: 'var(--color-neutral-600)',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.5px'
+                      }}>
+                        Institute
+                      </label>
+                      <InstituteSelect
+                        value={filters.instituteId}
+                        onChange={handleInstituteChange}
+                        placeholder="All Principals"
+                      />
+                    </div>
+                  </Col>
+                )}
+                {showBranchFilter && (
+                  <Col xs={24} sm={12} md={4}>
+                    <div>
+                      <label style={{
+                        display: 'block',
+                        marginBottom: 'var(--spacing-sm)',
+                        fontWeight: 600,
+                        fontSize: 'var(--font-size-sm)',
+                        color: 'var(--color-neutral-600)',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.5px'
+                      }}>
+                        Principal
+                      </label>
+                      <BranchSelect
+                        value={filters.branchId}
+                        onChange={handleBranchChange}
+                        instituteId={filters.instituteId}
+                        placeholder="All Branches"
+                      />
+                    </div>
+                  </Col>
+                )}
+              </>
+            )}
+          </Row>
+        </Space>
       </Card>
 
       {selectedTest && submissions.length === 0 && !loading && (
-        <Card style={{
-          marginTop: '24px',
-          borderRadius: '8px',
-          boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.03)'
-        }}>
+        <Card
+          style={{
+            borderRadius: 'var(--radius-lg)',
+            border: '1px solid var(--color-neutral-200)',
+            boxShadow: 'var(--shadow-base)',
+          }}
+          bodyStyle={{ padding: 80 }}
+        >
           <Empty
-            description={
-              <span style={{ color: '#8c8c8c', fontSize: '14px' }}>
-                No results found for the selected test and filters
-              </span>
-            }
-            style={{ padding: '80px 0' }}
+            description="No results found for the selected test and filters"
+            style={{ margin: 0 }}
           />
         </Card>
       )}
 
       {selectedTest && submissions.length > 0 && (
         <Card
-          title={<span style={{ fontSize: '16px', fontWeight: 600, color: '#262626' }}>Test Results</span>}
-          extra={
-            <Button
-              icon={<DownloadOutlined />}
-              onClick={handleDownload}
-              type="primary"
-              size="large"
-              style={{
-                borderRadius: '6px',
-                fontWeight: 500
-              }}
-            >
-              Download Excel
-            </Button>
-          }
+          bordered={false}
           style={{
-            borderRadius: '8px',
-            boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.03), 0 1px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px 0 rgba(0, 0, 0, 0.02)'
+            borderRadius: 'var(--radius-lg)',
+            border: '1px solid var(--color-neutral-200)',
+            boxShadow: 'var(--shadow-base)',
           }}
+          bodyStyle={{ padding: 0 }}
         >
           <Table
             dataSource={submissions}
@@ -700,11 +1014,10 @@ const Results = () => {
               pageSize: pagination.pageSize,
               total: pagination.total,
               showSizeChanger: true,
-              showTotal: (total) => `Total ${total} submissions`,
+              showTotal: (total) => `Showing 1-5 of ${total} entries`,
               pageSizeOptions: ['10', '20', '50', '100']
             }}
             onChange={handleTableChange}
-            scroll={{ x: 1200 }}
             expandable={{
               expandedRowRender: renderQuestionDetails,
               expandedRowKeys: expandedRowKeys,
@@ -721,7 +1034,7 @@ const Results = () => {
 
       <Modal
         title={
-          <div style={{ fontSize: '16px', fontWeight: 600 }}>
+          <div style={{ fontSize: 'var(--font-size-lg)', fontWeight: 600, color: 'var(--color-neutral-800)' }}>
             Question Details
           </div>
         }

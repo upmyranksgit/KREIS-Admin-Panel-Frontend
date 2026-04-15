@@ -6,6 +6,7 @@ import Dashboard from './pages/Dashboard';
 import ProtectedRoute from './components/ProtectedRoute';
 import { authService } from './services/authService';
 import { FilterProvider, DashboardProvider, ResultsProvider } from './context';
+import { theme } from './theme/antd-theme';
 
 function RootRedirect() {
   const navigate = useNavigate();
@@ -32,7 +33,7 @@ function RootRedirect() {
 
 function App() {
   return (
-    <ConfigProvider theme={{ token: { colorPrimary: '#1890ff' } }}>
+    <ConfigProvider theme={theme}>
       <FilterProvider>
         <DashboardProvider>
           <ResultsProvider>
