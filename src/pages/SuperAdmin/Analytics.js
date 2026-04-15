@@ -78,7 +78,7 @@ const Analytics = () => {
       link.click();
       link.remove();
 
-      message.success('Excel download started successfully');
+      message.success('Excel downloaded successfully');
     } catch (error) {
       console.error('Error downloading Excel:', error);
       message.error('Failed to download Excel');

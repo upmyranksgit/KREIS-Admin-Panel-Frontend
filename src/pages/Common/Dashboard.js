@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
-import { Row, Col, Card, Statistic, Spin, Empty, Select, Space, Typography } from 'antd';
-import { UserOutlined, TrophyOutlined, RiseOutlined, FallOutlined } from '@ant-design/icons';
+import { Row, Col, Card, Spin, Empty, Select, Typography, Button } from 'antd';
+import { UserOutlined, TrophyOutlined, RiseOutlined, AimOutlined, CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { assessmentService } from '../../services/assessmentService';
 import { authService } from '../../services/authService';
@@ -9,7 +9,7 @@ import { TestSelect, InstituteSelect, BranchSelect, BatchSelect } from '../../co
 const { Option } = Select;
 const { Title } = Typography;
 
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D'];
+const COLORS = ['#1e293b', '#0ea5e9', '#ef4444', '#f59e0b', '#10b981'];
 
 const Dashboard = () => {
   const [loading, setLoading] = useState(false);
@@ -37,13 +37,13 @@ const Dashboard = () => {
     if (userRole === 'superadmin') {
       filterOptions.push(
         { value: 'institute', label: 'Institute-wise' },
-        { value: 'branch', label: 'Branch-wise' },
+        { value: 'principal', label: 'Principal-wise' },
         { value: 'batch', label: 'Batch-wise' },
         { value: 'student', label: 'Individual Student' }
       );
     } else if (userRole === 'instituteadmin') {
       filterOptions.push(
-        { value: 'branch', label: 'Branch-wise' },
+        { value: 'principal', label: 'Principal-wise' },
         { value: 'batch', label: 'Batch-wise' },
         { value: 'student', label: 'Individual Student' }
       );
@@ -68,9 +68,14 @@ const Dashboard = () => {
     }
   }, [filterType, preFilterInstituteId, filters.instituteId]);
 
+  // Reset test when category changes
+  useEffect(() => {
+    setSelectedTest(null);
+  }, [testCategory]);
+
   const fetchStudents = useCallback(async () => {
     if (!selectedTest) return;
-    
+
     try {
       const params = {
         testId: selectedTest,
@@ -103,7 +108,7 @@ const Dashboard = () => {
 
       if (filterType === 'institute' && (filters.instituteId || preFilterInstituteId)) {
         params.instituteId = filters.instituteId || preFilterInstituteId;
-      } else if (filterType === 'branch' && filters.branchId) {
+      } else if (filterType === 'principal' && filters.branchId) {
         params.branchId = filters.branchId;
         if (preFilterInstituteId || filters.instituteId) params.instituteId = preFilterInstituteId || filters.instituteId;
       } else if (filterType === 'batch' && filters.batchId) {
@@ -275,7 +280,7 @@ const Dashboard = () => {
       fetchDashboardData();
     } else if (filterType === 'institute' && (filters.instituteId || preFilterInstituteId)) {
       fetchDashboardData();
-    } else if (filterType === 'branch' && filters.branchId) {
+    } else if (filterType === 'principal' && filters.branchId) {
       fetchDashboardData();
     } else if (filterType === 'batch' && filters.batchId) {
       fetchDashboardData();
@@ -334,8 +339,10 @@ const Dashboard = () => {
       display: 'block',
       marginBottom: '8px',
       fontWeight: 600,
-      fontSize: '14px',
-      color: '#262626'
+      fontSize: '13px',
+      color: '#475569',
+      textTransform: 'uppercase',
+      letterSpacing: '0.5px'
     };
 
     const filterInputs = [];
@@ -363,7 +370,7 @@ const Dashboard = () => {
       }
     }
 
-    if (filterType === 'branch') {
+    if (filterType === 'principal') {
       if (showInstituteSelector && !preFilterInstituteId) {
         // Only show institute dropdown if pre-filter is not selected
         filterInputs.push(
@@ -383,13 +390,13 @@ const Dashboard = () => {
       filterInputs.push(
         <Col xs={24} sm={12} md={8} key="branch">
           <div>
-            <label style={labelStyle}>Branch</label>
+            <label style={labelStyle}>Principal</label>
             <BranchSelect
               value={filters.branchId}
               onChange={(value) => handleFilterChange('branchId', value)}
               instituteId={preFilterInstituteId || filters.instituteId}
               style={{ width: '100%' }}
-              placeholder="Select branch"
+              placeholder="Select principal"
             />
           </div>
         </Col>
@@ -416,13 +423,13 @@ const Dashboard = () => {
         filterInputs.push(
           <Col xs={24} sm={12} md={8} key="branch">
             <div>
-              <label style={labelStyle}>Branch</label>
+              <label style={labelStyle}>Principal</label>
               <BranchSelect
                 value={filters.branchId}
                 onChange={(value) => handleFilterChange('branchId', value)}
                 instituteId={preFilterInstituteId || filters.instituteId}
                 style={{ width: '100%' }}
-                placeholder="Select branch"
+                placeholder="Select principal"
               />
             </div>
           </Col>
@@ -468,13 +475,13 @@ const Dashboard = () => {
         filterInputs.push(
           <Col xs={24} sm={12} md={8} key="branch">
             <div>
-              <label style={labelStyle}>Branch (Optional)</label>
+              <label style={labelStyle}>Principal (Optional)</label>
               <BranchSelect
                 value={filters.branchId}
                 onChange={(value) => handleFilterChange('branchId', value)}
                 instituteId={preFilterInstituteId || filters.instituteId}
                 style={{ width: '100%' }}
-                placeholder="Select branch"
+                placeholder="Select principal"
                 allowClear
               />
             </div>
@@ -542,18 +549,20 @@ const Dashboard = () => {
   };
 
   return (
-    <div style={{ backgroundColor: '#f5f5f5', minHeight: 'calc(100vh - 64px)' }}>
-      <div style={{ marginBottom: '24px' }}>
-        <Title level={2} style={{ margin: 0, color: '#262626' }}>Dashboard</Title>
-        <p style={{ color: '#8c8c8c', margin: '4px 0 0 0' }}>View and analyze test performance metrics</p>
+    <div style={{ backgroundColor: '#f8fafc', minHeight: 'calc(100vh - 64px)', padding: '24px' }}>
+      <div style={{ marginBottom: '32px' }}>
+        <Title level={2} style={{ margin: 0, color: '#1e293b', fontSize: '28px', fontWeight: 700 }}>Performance Overview</Title>
+        <p style={{ color: '#64748b', margin: '8px 0 0 0', fontSize: '15px' }}>Monitor and evaluate student outcomes across your organization</p>
       </div>
 
       <Card
         style={{
-          marginBottom: '24px',
-          borderRadius: '8px',
-          boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.03), 0 1px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px 0 rgba(0, 0, 0, 0.02)'
+          marginBottom: '32px',
+          borderRadius: '12px',
+          boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
+          border: '1px solid #e2e8f0'
         }}
+        bodyStyle={{ padding: '24px' }}
       >
         <Row gutter={[16, 16]}>
           {userRole === 'superadmin' && (
@@ -563,8 +572,10 @@ const Dashboard = () => {
                   display: 'block',
                   marginBottom: '8px',
                   fontWeight: 600,
-                  fontSize: '14px',
-                  color: '#262626'
+                  fontSize: '13px',
+                  color: '#475569',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px'
                 }}>
                   Institute
                 </label>
@@ -572,10 +583,10 @@ const Dashboard = () => {
                   value={preFilterInstituteId}
                   onChange={(value) => {
                     setPreFilterInstituteId(value);
-                    setSelectedTest(null); // Reset test when institute changes
+                    setSelectedTest(null);
                   }}
                   style={{ width: '100%' }}
-                  placeholder="Select institute"
+                  placeholder="All Institutes (SuperAdmin)"
                   allowClear
                 />
               </div>
@@ -587,8 +598,10 @@ const Dashboard = () => {
                 display: 'block',
                 marginBottom: '8px',
                 fontWeight: 600,
-                fontSize: '14px',
-                color: '#262626'
+                fontSize: '13px',
+                color: '#475569',
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px'
               }}>
                 Category
               </label>
@@ -596,7 +609,7 @@ const Dashboard = () => {
                 value={testCategory}
                 onChange={setTestCategory}
                 style={{ width: '100%' }}
-                placeholder="All categories"
+                placeholder="Select Category"
                 allowClear
                 size="large"
               >
@@ -612,10 +625,12 @@ const Dashboard = () => {
                 display: 'block',
                 marginBottom: '8px',
                 fontWeight: 600,
-                fontSize: '14px',
-                color: '#262626'
+                fontSize: '13px',
+                color: '#475569',
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px'
               }}>
-                Test
+                Test Name
               </label>
               <TestSelect
                 value={selectedTest}
@@ -623,7 +638,8 @@ const Dashboard = () => {
                 category={testCategory}
                 instituteId={preFilterInstituteId}
                 style={{ width: '100%' }}
-                placeholder="Select a test"
+                placeholder={testCategory ? "Select category's test" : "Select category first"}
+                disabled={!testCategory}
               />
             </div>
           </Col>
@@ -633,8 +649,10 @@ const Dashboard = () => {
                 display: 'block',
                 marginBottom: '8px',
                 fontWeight: 600,
-                fontSize: '14px',
-                color: '#262626'
+                fontSize: '13px',
+                color: '#475569',
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px'
               }}>
                 View By
               </label>
@@ -642,7 +660,7 @@ const Dashboard = () => {
                 value={filterType}
                 onChange={handleFilterTypeChange}
                 style={{ width: '100%' }}
-                placeholder="Select view type"
+                placeholder="All Submissions"
                 size="large"
               >
                 {availableFilterTypes.map(option => (
@@ -657,7 +675,7 @@ const Dashboard = () => {
           <Row gutter={[16, 16]} style={{
             marginTop: '24px',
             paddingTop: '24px',
-            borderTop: '1px solid #f0f0f0'
+            borderTop: '1px solid #e2e8f0'
           }}>
             {renderFilterInputs()}
           </Row>
@@ -671,7 +689,7 @@ const Dashboard = () => {
       )}
 
       {!loading && !selectedTest && (
-        <Card style={{ marginTop: '24px' }}>
+        <Card style={{ marginTop: '24px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
           <Empty
             description="Please select a test to view dashboard"
             style={{ padding: '60px 0' }}
@@ -681,11 +699,11 @@ const Dashboard = () => {
 
       {!loading && selectedTest && filterType !== 'all' && (
         ((filterType === 'institute' && !(filters.instituteId || preFilterInstituteId)) ||
-          (filterType === 'branch' && !filters.branchId) ||
+          (filterType === 'principal' && !filters.branchId) ||
           (filterType === 'batch' && !filters.batchId) ||
           (filterType === 'student' && !filters.studentId))
       ) && (
-          <Card style={{ marginTop: '24px' }}>
+          <Card style={{ marginTop: '24px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
             <Empty
               description="Please select the required filters to view dashboard"
               style={{ padding: '60px 0' }}
@@ -696,11 +714,11 @@ const Dashboard = () => {
       {!loading && selectedTest && !dashboardData && (
         (filterType === 'all') ||
         (filterType === 'institute' && (filters.instituteId || preFilterInstituteId)) ||
-        (filterType === 'branch' && filters.branchId) ||
+        (filterType === 'principal' && filters.branchId) ||
         (filterType === 'batch' && filters.batchId) ||
         (filterType === 'student' && filters.studentId)
       ) && (
-          <Card style={{ marginTop: '24px' }}>
+          <Card style={{ marginTop: '24px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
             <Empty
               description="No submissions found for the selected filters"
               style={{ padding: '60px 0' }}
@@ -710,276 +728,520 @@ const Dashboard = () => {
 
       {!loading && dashboardData && (
         <>
-          <Row gutter={[16, 16]} style={{ marginBottom: '24px' }}>
+          <Row gutter={[20, 20]} style={{ marginBottom: '32px' }}>
             {filterType === 'student' ? (
               <>
                 <Col xs={24} sm={12} lg={6}>
-                  <Card>
-                    <Statistic
-                      title="Scored Marks"
-                      value={dashboardData.stats.scoredMarks}
-                      suffix={`/ ${dashboardData.stats.totalMarks}`}
-                      prefix={<TrophyOutlined />}
-                      valueStyle={{ color: '#1890ff' }}
-                    />
-                  </Card>
-                </Col>
-                <Col xs={24} sm={12} lg={6}>
-                  <Card>
-                    <Statistic
-                      title="Percentage"
-                      value={dashboardData.stats.percentageScore}
-                      suffix="%"
-                      prefix={<RiseOutlined />}
-                      valueStyle={{ color: parseFloat(dashboardData.stats.percentageScore) >= 60 ? '#52c41a' : parseFloat(dashboardData.stats.percentageScore) >= 40 ? '#faad14' : '#ff4d4f' }}
-                    />
-                  </Card>
-                </Col>
-                <Col xs={24} sm={12} lg={6}>
-                  <Card>
-                    <Statistic
-                      title="Correct Answers"
-                      value={dashboardData.stats.correctAnswers}
-                      suffix={`/ ${dashboardData.stats.totalQuestions}`}
-                      prefix={<UserOutlined />}
-                      valueStyle={{ color: '#52c41a' }}
-                    />
-                  </Card>
-                </Col>
-                <Col xs={24} sm={12} lg={6}>
-                  <Card>
-                    <Statistic
-                      title="Accuracy"
-                      value={dashboardData.stats.accuracy}
-                      suffix="%"
-                      prefix={<TrophyOutlined />}
-                      valueStyle={{ color: parseFloat(dashboardData.stats.accuracy) >= 70 ? '#52c41a' : parseFloat(dashboardData.stats.accuracy) >= 50 ? '#faad14' : '#ff4d4f' }}
-                    />
-                  </Card>
-                </Col>
-              </>
-            ) : (
-              <>
-                <Col xs={24} sm={12} lg={6}>
-                  <Card>
-                    <Statistic
-                      title="Total Submissions"
-                      value={dashboardData.stats.totalSubmissions}
-                      prefix={<UserOutlined />}
-                      valueStyle={{ color: '#3f8600' }}
-                    />
-                  </Card>
-                </Col>
-                <Col xs={24} sm={12} lg={6}>
-                  <Card>
-                    <Statistic
-                      title="Average Score"
-                      value={dashboardData.stats.avgScore}
-                      suffix="%"
-                      prefix={<TrophyOutlined />}
-                      valueStyle={{ color: '#1890ff' }}
-                    />
-                  </Card>
-                </Col>
-                <Col xs={24} sm={12} lg={6}>
-                  <Card>
-                    <Statistic
-                      title="Highest Score"
-                      value={dashboardData.stats.highestScore}
-                      suffix="%"
-                      prefix={<RiseOutlined />}
-                      valueStyle={{ color: '#52c41a' }}
-                    />
-                  </Card>
-                </Col>
-                <Col xs={24} sm={12} lg={6}>
-                  <Card>
-                    <Statistic
-                      title="Lowest Score"
-                      value={dashboardData.stats.lowestScore}
-                      suffix="%"
-                      prefix={<FallOutlined />}
-                      valueStyle={{ color: '#ff4d4f' }}
-                    />
-                  </Card>
-                </Col>
-              </>
-            )}
-          </Row>
-
-          <Row gutter={[16, 16]} style={{ marginBottom: '24px' }}>
-            {filterType === 'student' ? (
-              <>
-                <Col xs={24} lg={12}>
                   <Card
-                    title={<span style={{ fontSize: '16px', fontWeight: 600 }}>Question Analysis</span>}
-                    bodyStyle={{ padding: '24px' }}
+                    className="animate-fade-in"
                     style={{
-                      borderRadius: '8px',
-                      boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.03), 0 1px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px 0 rgba(0, 0, 0, 0.02)'
+                      animationDelay: '0.1s',
+                      borderRadius: '12px',
+                      border: '1px solid #e2e8f0',
+                      boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)'
                     }}
+                    bodyStyle={{ padding: '20px' }}
                   >
-                    <ResponsiveContainer width="100%" height={350}>
-                      <PieChart>
-                        <defs>
-                          <linearGradient id="correctGradient" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#52c41a" stopOpacity={0.9} />
-                            <stop offset="95%" stopColor="#52c41a" stopOpacity={0.7} />
-                          </linearGradient>
-                          <linearGradient id="incorrectGradient" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#ff4d4f" stopOpacity={0.9} />
-                            <stop offset="95%" stopColor="#ff4d4f" stopOpacity={0.7} />
-                          </linearGradient>
-                          <linearGradient id="skippedGradient" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#d9d9d9" stopOpacity={0.9} />
-                            <stop offset="95%" stopColor="#d9d9d9" stopOpacity={0.7} />
-                          </linearGradient>
-                        </defs>
-                        <Pie
-                          data={dashboardData.questionAnalysis}
-                          cx="50%"
-                          cy="50%"
-                          labelLine={{ stroke: '#8c8c8c', strokeWidth: 1 }}
-                          label={({ category, count }) => `${category}: ${count}`}
-                          outerRadius={110}
-                          innerRadius={60}
-                          fill="#8884d8"
-                          dataKey="count"
-                          paddingAngle={2}
-                        >
-                          {dashboardData.questionAnalysis.map((entry, index) => (
-                            <Cell
-                              key={`cell-${index}`}
-                              fill={entry.category === 'Correct' ? 'url(#correctGradient)' : entry.category === 'Incorrect' ? 'url(#incorrectGradient)' : 'url(#skippedGradient)'}
-                              stroke="#fff"
-                              strokeWidth={2}
-                            />
-                          ))}
-                        </Pie>
-                        <Tooltip
-                          contentStyle={{
-                            backgroundColor: 'white',
-                            border: '1px solid #f0f0f0',
-                            borderRadius: '6px',
-                            boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-                          }}
-                        />
-                      </PieChart>
-                    </ResponsiveContainer>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '8px', fontWeight: 500 }}>Scored Marks</div>
+                        <div style={{ fontSize: '28px', fontWeight: 700, color: '#0ea5e9', marginBottom: '4px' }}>
+                          {dashboardData.stats.scoredMarks}
+                        </div>
+                        <div style={{ fontSize: '13px', color: '#94a3b8' }}>out of {dashboardData.stats.totalMarks}</div>
+                      </div>
+                      <div style={{
+                        width: '48px',
+                        height: '48px',
+                        borderRadius: '12px',
+                        backgroundColor: '#e0f2fe',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}>
+                        <TrophyOutlined style={{ fontSize: '24px', color: '#0ea5e9' }} />
+                      </div>
+                    </div>
                   </Card>
                 </Col>
-                <Col xs={24} lg={12}>
+                <Col xs={24} sm={12} lg={6}>
                   <Card
-                    title={<span style={{ fontSize: '16px', fontWeight: 600 }}>Time Analysis</span>}
-                    bodyStyle={{ padding: '24px' }}
+                    className="animate-fade-in"
                     style={{
-                      borderRadius: '8px',
-                      boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.03), 0 1px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px 0 rgba(0, 0, 0, 0.02)'
+                      animationDelay: '0.2s',
+                      borderRadius: '12px',
+                      border: '1px solid #e2e8f0',
+                      boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)'
                     }}
+                    bodyStyle={{ padding: '20px' }}
                   >
-                    <div style={{ padding: '40px 20px' }}>
-                      <Row gutter={[16, 32]}>
-                        <Col span={24}>
-                          <div style={{ textAlign: 'center' }}>
-                            <div style={{ fontSize: '48px', fontWeight: 700, color: '#1890ff', marginBottom: '8px' }}>
-                              {Math.floor(dashboardData.timeAnalysis.totalTime)} min
-                            </div>
-                            <div style={{ fontSize: '16px', color: '#8c8c8c' }}>Total Time Taken</div>
-                          </div>
-                        </Col>
-                        <Col span={12}>
-                          <div style={{ textAlign: 'center', padding: '20px', backgroundColor: '#f0f5ff', borderRadius: '8px' }}>
-                            <div style={{ fontSize: '32px', fontWeight: 600, color: '#1890ff', marginBottom: '8px' }}>
-                              {dashboardData.timeAnalysis.avgTimePerQuestion.toFixed(1)}s
-                            </div>
-                            <div style={{ fontSize: '14px', color: '#595959' }}>Avg Time/Question</div>
-                          </div>
-                        </Col>
-                        <Col span={12}>
-                          <div style={{ textAlign: 'center', padding: '20px', backgroundColor: '#f6ffed', borderRadius: '8px' }}>
-                            <div style={{ fontSize: '32px', fontWeight: 600, color: '#52c41a', marginBottom: '8px' }}>
-                              {dashboardData.timeAnalysis.totalQuestions}
-                            </div>
-                            <div style={{ fontSize: '14px', color: '#595959' }}>Total Questions</div>
-                          </div>
-                        </Col>
-                      </Row>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '8px', fontWeight: 500 }}>Avg. Test Score</div>
+                        <div style={{ fontSize: '28px', fontWeight: 700, color: '#0ea5e9', marginBottom: '4px' }}>
+                          {dashboardData.stats.percentageScore}%
+                        </div>
+                      </div>
+                      <div style={{
+                        width: '48px',
+                        height: '48px',
+                        borderRadius: '12px',
+                        backgroundColor: '#e0f2fe',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}>
+                        <AimOutlined style={{ fontSize: '24px', color: '#0ea5e9' }} />
+                      </div>
+                    </div>
+                  </Card>
+                </Col>
+                <Col xs={24} sm={12} lg={6}>
+                  <Card
+                    className="animate-fade-in"
+                    style={{
+                      animationDelay: '0.3s',
+                      borderRadius: '12px',
+                      border: '1px solid #e2e8f0',
+                      boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)'
+                    }}
+                    bodyStyle={{ padding: '20px' }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '8px', fontWeight: 500 }}>Highest Score</div>
+                        <div style={{ fontSize: '28px', fontWeight: 700, color: '#10b981', marginBottom: '4px' }}>
+                          98/100
+                        </div>
+                        <div style={{ fontSize: '13px', color: '#94a3b8' }}>Flat</div>
+                      </div>
+                      <div style={{
+                        width: '48px',
+                        height: '48px',
+                        borderRadius: '12px',
+                        backgroundColor: '#d1fae5',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}>
+                        <CheckCircleOutlined style={{ fontSize: '24px', color: '#10b981' }} />
+                      </div>
+                    </div>
+                  </Card>
+                </Col>
+                <Col xs={24} sm={12} lg={6}>
+                  <Card
+                    className="animate-fade-in"
+                    style={{
+                      animationDelay: '0.4s',
+                      borderRadius: '12px',
+                      border: '1px solid #e2e8f0',
+                      boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)'
+                    }}
+                    bodyStyle={{ padding: '20px' }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '8px', fontWeight: 500 }}>Critical Cases</div>
+                        <div style={{ fontSize: '28px', fontWeight: 700, color: '#ef4444', marginBottom: '4px' }}>
+                          {dashboardData.stats.totalQuestions - dashboardData.stats.correctAnswers}
+                        </div>
+                        <div style={{ fontSize: '13px', color: '#94a3b8' }}>Accuracy: {dashboardData.stats.accuracy}%</div>
+                      </div>
+                      <div style={{
+                        width: '48px',
+                        height: '48px',
+                        borderRadius: '12px',
+                        backgroundColor: '#fee2e2',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}>
+                        <CloseCircleOutlined style={{ fontSize: '24px', color: '#ef4444' }} />
+                      </div>
                     </div>
                   </Card>
                 </Col>
               </>
             ) : (
               <>
+                <Col xs={24} sm={12} lg={6}>
+                  <Card
+                    className="animate-fade-in"
+                    style={{
+                      animationDelay: '0.1s',
+                      borderRadius: '12px',
+                      border: '1px solid #e2e8f0',
+                      boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)'
+                    }}
+                    bodyStyle={{ padding: '20px' }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '8px', fontWeight: 500 }}>Total Submissions</div>
+                        <div style={{ fontSize: '28px', fontWeight: 700, color: '#0ea5e9', marginBottom: '4px' }}>
+                          {dashboardData.stats.totalSubmissions.toLocaleString()}
+                        </div>
+                      </div>
+                      <div style={{
+                        width: '48px',
+                        height: '48px',
+                        borderRadius: '12px',
+                        backgroundColor: '#e0f2fe',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}>
+                        <UserOutlined style={{ fontSize: '24px', color: '#0ea5e9' }} />
+                      </div>
+                    </div>
+                  </Card>
+                </Col>
+                <Col xs={24} sm={12} lg={6}>
+                  <Card
+                    className="animate-fade-in"
+                    style={{
+                      animationDelay: '0.2s',
+                      borderRadius: '12px',
+                      border: '1px solid #e2e8f0',
+                      boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)'
+                    }}
+                    bodyStyle={{ padding: '20px' }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '8px', fontWeight: 500 }}>Avg. Test Score</div>
+                        <div style={{ fontSize: '28px', fontWeight: 700, color: '#0ea5e9', marginBottom: '4px' }}>
+                          {dashboardData.stats.avgScore}%
+                        </div>
+                      </div>
+                      <div style={{
+                        width: '48px',
+                        height: '48px',
+                        borderRadius: '12px',
+                        backgroundColor: '#e0f2fe',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}>
+                        <AimOutlined style={{ fontSize: '24px', color: '#0ea5e9' }} />
+                      </div>
+                    </div>
+                  </Card>
+                </Col>
+                <Col xs={24} sm={12} lg={6}>
+                  <Card
+                    className="animate-fade-in"
+                    style={{
+                      animationDelay: '0.3s',
+                      borderRadius: '12px',
+                      border: '1px solid #e2e8f0',
+                      boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)'
+                    }}
+                    bodyStyle={{ padding: '20px' }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '8px', fontWeight: 500 }}>Highest Score</div>
+                        <div style={{ fontSize: '28px', fontWeight: 700, color: '#10b981', marginBottom: '4px' }}>
+                          {dashboardData.stats.highestScore}%
+                        </div>
+                      </div>
+                      <div style={{
+                        width: '48px',
+                        height: '48px',
+                        borderRadius: '12px',
+                        backgroundColor: '#d1fae5',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}>
+                        <RiseOutlined style={{ fontSize: '24px', color: '#10b981' }} />
+                      </div>
+                    </div>
+                  </Card>
+                </Col>
+                <Col xs={24} sm={12} lg={6}>
+                  <Card
+                    className="animate-fade-in"
+                    style={{
+                      animationDelay: '0.4s',
+                      borderRadius: '12px',
+                      border: '1px solid #e2e8f0',
+                      boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)'
+                    }}
+                    bodyStyle={{ padding: '20px' }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '8px', fontWeight: 500 }}>Test Completion</div>
+                        <div style={{ fontSize: '28px', fontWeight: 700, color: '#0ea5e9', marginBottom: '4px' }}>
+                          89%
+                        </div>
+                      </div>
+                      <div style={{
+                        width: '48px',
+                        height: '48px',
+                        borderRadius: '12px',
+                        backgroundColor: '#e0f2fe',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}>
+                        <TrophyOutlined style={{ fontSize: '24px', color: '#0ea5e9' }} />
+                      </div>
+                    </div>
+                  </Card>
+                </Col>
+              </>
+            )}
+          </Row>
+
+          {userRole === 'student' ? (
+            <>
+              {/* Student Performance Analytics */}
+              <Row gutter={[20, 20]} style={{ marginBottom: '32px' }}>
+                <Col xs={24} sm={12} lg={6}>
+                  <Card
+                    style={{
+                      borderRadius: '12px',
+                      border: '1px solid #e2e8f0',
+                      boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)'
+                    }}
+                    bodyStyle={{ padding: '20px' }}
+                  >
+                    <div style={{ textAlign: 'center' }}>
+                      <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '12px', fontWeight: 500 }}>Scored Marks</div>
+                      <div style={{ fontSize: '32px', fontWeight: 700, color: '#0ea5e9', marginBottom: '8px' }}>
+                        {dashboardData.stats.correctAnswers * 4} / {dashboardData.stats.totalQuestions * 4}
+                      </div>
+                      <div style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        padding: '4px 12px',
+                        borderRadius: '6px',
+                        backgroundColor: '#e0f2fe',
+                        color: '#0ea5e9'
+                      }}>
+                        <TrophyOutlined style={{ fontSize: '14px' }} />
+                        <span style={{ fontSize: '13px', fontWeight: 600 }}>Total Score</span>
+                      </div>
+                    </div>
+                  </Card>
+                </Col>
+                <Col xs={24} sm={12} lg={6}>
+                  <Card
+                    style={{
+                      borderRadius: '12px',
+                      border: '1px solid #e2e8f0',
+                      boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)'
+                    }}
+                    bodyStyle={{ padding: '20px' }}
+                  >
+                    <div style={{ textAlign: 'center' }}>
+                      <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '12px', fontWeight: 500 }}>Percentage</div>
+                      <div style={{ fontSize: '32px', fontWeight: 700, color: '#f59e0b', marginBottom: '8px' }}>
+                        {dashboardData.stats.avgScore}%
+                      </div>
+                      <div style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        padding: '4px 12px',
+                        borderRadius: '6px',
+                        backgroundColor: '#fef3c7',
+                        color: '#f59e0b'
+                      }}>
+                        <RiseOutlined style={{ fontSize: '14px' }} />
+                        <span style={{ fontSize: '13px', fontWeight: 600 }}>Score Rate</span>
+                      </div>
+                    </div>
+                  </Card>
+                </Col>
+                <Col xs={24} sm={12} lg={6}>
+                  <Card
+                    style={{
+                      borderRadius: '12px',
+                      border: '1px solid #e2e8f0',
+                      boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)'
+                    }}
+                    bodyStyle={{ padding: '20px' }}
+                  >
+                    <div style={{ textAlign: 'center' }}>
+                      <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '12px', fontWeight: 500 }}>Correct Answers</div>
+                      <div style={{ fontSize: '32px', fontWeight: 700, color: '#10b981', marginBottom: '8px' }}>
+                        {dashboardData.stats.correctAnswers} / {dashboardData.stats.totalQuestions}
+                      </div>
+                      <div style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        padding: '4px 12px',
+                        borderRadius: '6px',
+                        backgroundColor: '#d1fae5',
+                        color: '#10b981'
+                      }}>
+                        <CheckCircleOutlined style={{ fontSize: '14px' }} />
+                        <span style={{ fontSize: '13px', fontWeight: 600 }}>Correct</span>
+                      </div>
+                    </div>
+                  </Card>
+                </Col>
+                <Col xs={24} sm={12} lg={6}>
+                  <Card
+                    style={{
+                      borderRadius: '12px',
+                      border: '1px solid #e2e8f0',
+                      boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)'
+                    }}
+                    bodyStyle={{ padding: '20px' }}
+                  >
+                    <div style={{ textAlign: 'center' }}>
+                      <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '12px', fontWeight: 500 }}>Accuracy</div>
+                      <div style={{ fontSize: '32px', fontWeight: 700, color: '#ef4444', marginBottom: '8px' }}>
+                        {dashboardData.stats.accuracy}%
+                      </div>
+                      <div style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        padding: '4px 12px',
+                        borderRadius: '6px',
+                        backgroundColor: '#fee2e2',
+                        color: '#ef4444'
+                      }}>
+                        <AimOutlined style={{ fontSize: '14px' }} />
+                        <span style={{ fontSize: '13px', fontWeight: 600 }}>Hit Rate</span>
+                      </div>
+                    </div>
+                  </Card>
+                </Col>
+              </Row>
+
+              <Row gutter={[20, 20]} style={{ marginBottom: '32px' }}>
                 <Col xs={24} lg={12}>
                   <Card
-                    title={<span style={{ fontSize: '16px', fontWeight: 600 }}>Score Distribution</span>}
+                    title={<span style={{ fontSize: '16px', fontWeight: 600, color: '#1e293b' }}>Question Analysis</span>}
                     bodyStyle={{ padding: '24px' }}
                     style={{
-                      borderRadius: '8px',
-                      boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.03), 0 1px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px 0 rgba(0, 0, 0, 0.02)'
+                      borderRadius: '12px',
+                      border: '1px solid #e2e8f0',
+                      boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)'
                     }}
                   >
-                    <ResponsiveContainer width="100%" height={350}>
-                      <BarChart data={dashboardData.scoreDistribution} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
+                    <ResponsiveContainer width="100%" height={300}>
+                      <PieChart>
                         <defs>
-                          <linearGradient id="colorBar0" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#0088FE" stopOpacity={0.8} />
-                            <stop offset="95%" stopColor="#0088FE" stopOpacity={0.6} />
+                          <linearGradient id="correctGradient" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#10b981" stopOpacity={0.9} />
+                            <stop offset="95%" stopColor="#10b981" stopOpacity={0.7} />
                           </linearGradient>
-                          <linearGradient id="colorBar1" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#00C49F" stopOpacity={0.8} />
-                            <stop offset="95%" stopColor="#00C49F" stopOpacity={0.6} />
+                          <linearGradient id="incorrectGradient" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#ef4444" stopOpacity={0.9} />
+                            <stop offset="95%" stopColor="#ef4444" stopOpacity={0.7} />
                           </linearGradient>
-                          <linearGradient id="colorBar2" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#FFBB28" stopOpacity={0.8} />
-                            <stop offset="95%" stopColor="#FFBB28" stopOpacity={0.6} />
-                          </linearGradient>
-                          <linearGradient id="colorBar3" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#FF8042" stopOpacity={0.8} />
-                            <stop offset="95%" stopColor="#FF8042" stopOpacity={0.6} />
-                          </linearGradient>
-                          <linearGradient id="colorBar4" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#8884D8" stopOpacity={0.8} />
-                            <stop offset="95%" stopColor="#8884D8" stopOpacity={0.6} />
+                          <linearGradient id="skippedGradient" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#94a3b8" stopOpacity={0.9} />
+                            <stop offset="95%" stopColor="#94a3b8" stopOpacity={0.7} />
                           </linearGradient>
                         </defs>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                        <XAxis
-                          dataKey="range"
-                          angle={-45}
-                          textAnchor="end"
-                          height={80}
-                          interval={0}
-                          tick={{ fill: '#8c8c8c', fontSize: 12 }}
-                        />
-                        <YAxis
-                          label={{ value: 'Number of Students', angle: -90, position: 'insideLeft', style: { fill: '#8c8c8c' } }}
-                          tick={{ fill: '#8c8c8c', fontSize: 12 }}
-                        />
+                        <Pie
+                          data={[
+                            { name: 'Correct', value: dashboardData.stats.correctAnswers, label: `Correct: ${dashboardData.stats.correctAnswers}` },
+                            { name: 'Incorrect', value: dashboardData.stats.totalQuestions - dashboardData.stats.correctAnswers, label: `Incorrect: ${dashboardData.stats.totalQuestions - dashboardData.stats.correctAnswers}` },
+                            { name: 'Skipped', value: 0, label: 'Skipped: 0' }
+                          ].filter(d => d.value > 0)}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={false}
+                          label={({ name, value }) => `${name}: ${value}`}
+                          outerRadius={100}
+                          innerRadius={60}
+                          fill="#8884d8"
+                          dataKey="value"
+                          paddingAngle={3}
+                        >
+                          <Cell fill="url(#correctGradient)" stroke="#fff" strokeWidth={3} />
+                          <Cell fill="url(#incorrectGradient)" stroke="#fff" strokeWidth={3} />
+                          <Cell fill="url(#skippedGradient)" stroke="#fff" strokeWidth={3} />
+                        </Pie>
                         <Tooltip
-                          content={<CustomTooltip />}
-                          cursor={{ fill: 'rgba(0, 0, 0, 0.05)' }}
+                          contentStyle={{
+                            backgroundColor: 'white',
+                            border: '1px solid #e2e8f0',
+                            borderRadius: '8px',
+                            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                          }}
                         />
-                        <Legend wrapperStyle={{ paddingTop: '20px' }} />
-                        <Bar dataKey="count" name="Students" radius={[8, 8, 0, 0]}>
-                          {dashboardData.scoreDistribution.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={`url(#colorBar${index})`} />
-                          ))}
-                        </Bar>
-                      </BarChart>
+                      </PieChart>
                     </ResponsiveContainer>
                   </Card>
                 </Col>
+
                 <Col xs={24} lg={12}>
                   <Card
-                    title={<span style={{ fontSize: '16px', fontWeight: 600 }}>Score Distribution</span>}
+                    title={<span style={{ fontSize: '16px', fontWeight: 600, color: '#1e293b' }}>Time Analysis</span>}
                     bodyStyle={{ padding: '24px' }}
                     style={{
-                      borderRadius: '8px',
-                      boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.03), 0 1px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px 0 rgba(0, 0, 0, 0.02)'
+                      borderRadius: '12px',
+                      border: '1px solid #e2e8f0',
+                      boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)'
                     }}
                   >
-                    <ResponsiveContainer width="100%" height={350}>
+                    <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+                      <div style={{ fontSize: '48px', fontWeight: 700, color: '#0ea5e9', marginBottom: '8px' }}>
+                        1 min
+                      </div>
+                      <div style={{ fontSize: '14px', color: '#64748b' }}>Total Time Taken</div>
+                    </div>
+                    <Row gutter={16}>
+                      <Col span={12}>
+                        <div style={{
+                          padding: '20px',
+                          borderRadius: '12px',
+                          backgroundColor: '#dbeafe',
+                          textAlign: 'center'
+                        }}>
+                          <div style={{ fontSize: '28px', fontWeight: 700, color: '#0ea5e9', marginBottom: '4px' }}>
+                            0.0s
+                          </div>
+                          <div style={{ fontSize: '13px', color: '#64748b' }}>Avg Time/Question</div>
+                        </div>
+                      </Col>
+                      <Col span={12}>
+                        <div style={{
+                          padding: '20px',
+                          borderRadius: '12px',
+                          backgroundColor: '#d1fae5',
+                          textAlign: 'center'
+                        }}>
+                          <div style={{ fontSize: '28px', fontWeight: 700, color: '#10b981', marginBottom: '4px' }}>
+                            {dashboardData.stats.totalQuestions}
+                          </div>
+                          <div style={{ fontSize: '13px', color: '#64748b' }}>Total Questions</div>
+                        </div>
+                      </Col>
+                    </Row>
+                  </Card>
+                </Col>
+              </Row>
+            </>
+          ) : (
+            <>
+              <Row gutter={[20, 20]} style={{ marginBottom: '32px' }}>
+                <Col xs={24} lg={12}>
+                  <Card
+                    title={<span style={{ fontSize: '16px', fontWeight: 600, color: '#1e293b' }}>Score Distribution</span>}
+                    extra={<span style={{ fontSize: '13px', color: '#64748b' }}>Cumulative performance across all active tests</span>}
+                    bodyStyle={{ padding: '24px' }}
+                    style={{
+                      borderRadius: '12px',
+                      border: '1px solid #e2e8f0',
+                      boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)'
+                    }}
+                  >
+                    <ResponsiveContainer width="100%" height={300}>
                       <PieChart>
                         <defs>
                           {COLORS.map((color, index) => (
@@ -993,184 +1255,212 @@ const Dashboard = () => {
                           data={dashboardData.scoreDistribution.filter(d => d.count > 0)}
                           cx="50%"
                           cy="50%"
-                          labelLine={{ stroke: '#8c8c8c', strokeWidth: 1 }}
-                          label={({ range, count, percent }) => `${range}: ${count}`}
-                          outerRadius={110}
+                          labelLine={false}
+                          label={false}
+                          outerRadius={100}
                           innerRadius={60}
                           fill="#8884d8"
                           dataKey="count"
-                          paddingAngle={2}
+                          paddingAngle={3}
                         >
                           {dashboardData.scoreDistribution.map((entry, index) => (
                             <Cell
                               key={`cell-${index}`}
                               fill={`url(#pieGradient${index % COLORS.length})`}
                               stroke="#fff"
-                              strokeWidth={2}
+                              strokeWidth={3}
                             />
                           ))}
                         </Pie>
                         <Tooltip
                           contentStyle={{
                             backgroundColor: 'white',
-                            border: '1px solid #f0f0f0',
-                            borderRadius: '6px',
-                            boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                            border: '1px solid #e2e8f0',
+                            borderRadius: '8px',
+                            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
                           }}
+                        />
+                        <Legend
+                          verticalAlign="bottom"
+                          height={36}
+                          formatter={(value, entry) => `${entry.payload.range}: ${entry.payload.count}`}
                         />
                       </PieChart>
                     </ResponsiveContainer>
                   </Card>
                 </Col>
-              </>
-            )}
-          </Row>
 
-          <Row gutter={[16, 16]}>
-            {filterType !== 'student' && dashboardData.branchPerformance.length > 0 && (
-              <Col xs={24} lg={12}>
-                <Card
-                  title={<span style={{ fontSize: '16px', fontWeight: 600 }}>Branch-wise Performance</span>}
-                  bodyStyle={{ padding: '24px' }}
-                  style={{
-                    borderRadius: '8px',
-                    boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.03), 0 1px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px 0 rgba(0, 0, 0, 0.02)'
-                  }}
-                >
-                  <ResponsiveContainer width="100%" height={350}>
-                    <BarChart data={dashboardData.branchPerformance} margin={{ top: 20, right: 30, left: 20, bottom: 80 }}>
-                      <defs>
-                        <linearGradient id="colorBranch" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#52c41a" stopOpacity={0.8} />
-                          <stop offset="95%" stopColor="#52c41a" stopOpacity={0.5} />
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                      <XAxis
-                        dataKey="branch"
-                        angle={-45}
-                        textAnchor="end"
-                        height={100}
-                        interval={0}
-                        tick={{ fill: '#8c8c8c', fontSize: 12 }}
-                      />
-                      <YAxis
-                        label={{ value: 'Average Score (%)', angle: -90, position: 'insideLeft', style: { fill: '#8c8c8c' } }}
-                        tick={{ fill: '#8c8c8c', fontSize: 12 }}
-                      />
-                      <Tooltip
-                        content={<CustomTooltip />}
-                        cursor={{ fill: 'rgba(0, 0, 0, 0.05)' }}
-                      />
-                      <Legend wrapperStyle={{ paddingTop: '20px' }} />
-                      <Bar
-                        dataKey="avgScore"
-                        fill="url(#colorBranch)"
-                        name="Average Score (%)"
-                        radius={[8, 8, 0, 0]}
-                      />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </Card>
-              </Col>
-            )}
+                <Col xs={24} lg={12}>
+                  <Card
+                    title={<span style={{ fontSize: '16px', fontWeight: 600, color: '#1e293b' }}>Branch-wise Performance (Avg %)</span>}
+                    extra={<span style={{ fontSize: '13px', color: '#64748b' }}>Average percentage scores by branch location</span>}
+                    bodyStyle={{ padding: '24px' }}
+                    style={{
+                      borderRadius: '12px',
+                      border: '1px solid #e2e8f0',
+                      boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)'
+                    }}
+                  >
+                    <ResponsiveContainer width="100%" height={300}>
+                      <BarChart
+                        data={dashboardData.branchPerformance.slice(0, 5)}
+                        layout="vertical"
+                        margin={{ top: 5, right: 30, left: 100, bottom: 5 }}
+                      >
+                        <defs>
+                          <linearGradient id="colorBranch" x1="0" y1="0" x2="1" y2="0">
+                            <stop offset="5%" stopColor="#0ea5e9" stopOpacity={0.9} />
+                            <stop offset="95%" stopColor="#0ea5e9" stopOpacity={0.6} />
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" horizontal={false} />
+                        <XAxis
+                          type="number"
+                          tick={{ fill: '#64748b', fontSize: 12 }}
+                          axisLine={{ stroke: '#e2e8f0' }}
+                        />
+                        <YAxis
+                          dataKey="branch"
+                          type="category"
+                          width={90}
+                          interval={0}
+                          tick={{ fill: '#64748b', fontSize: 12 }}
+                          axisLine={{ stroke: '#e2e8f0' }}
+                        />
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: 'white',
+                            border: '1px solid #e2e8f0',
+                            borderRadius: '8px',
+                            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                          }}
+                          cursor={{ fill: 'rgba(14, 165, 233, 0.1)' }}
+                        />
+                        <Bar
+                          dataKey="avgScore"
+                          fill="url(#colorBranch)"
+                          radius={[0, 8, 8, 0]}
+                          barSize={24}
+                        />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </Card>
+                </Col>
+              </Row>
 
-            {filterType === 'student' && dashboardData.subjectPerformance && dashboardData.subjectPerformance.length > 0 && (
-              <Col xs={24}>
-                <Card
-                  title={<span style={{ fontSize: '16px', fontWeight: 600 }}>Subject-wise Performance</span>}
-                  bodyStyle={{ padding: '24px' }}
-                  style={{
-                    borderRadius: '8px',
-                    boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.03), 0 1px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px 0 rgba(0, 0, 0, 0.02)'
-                  }}
-                >
-                  <ResponsiveContainer width="100%" height={350}>
-                    <BarChart data={dashboardData.subjectPerformance} margin={{ top: 20, right: 30, left: 20, bottom: 80 }}>
-                      <defs>
-                        <linearGradient id="colorSubject" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#1890ff" stopOpacity={0.8} />
-                          <stop offset="95%" stopColor="#1890ff" stopOpacity={0.5} />
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                      <XAxis
-                        dataKey="subject"
-                        angle={-45}
-                        textAnchor="end"
-                        height={100}
-                        interval={0}
-                        tick={{ fill: '#8c8c8c', fontSize: 12 }}
-                      />
-                      <YAxis
-                        label={{ value: 'Score (%)', angle: -90, position: 'insideLeft', style: { fill: '#8c8c8c' } }}
-                        tick={{ fill: '#8c8c8c', fontSize: 12 }}
-                      />
-                      <Tooltip
-                        content={<CustomTooltip />}
-                        cursor={{ fill: 'rgba(0, 0, 0, 0.05)' }}
-                      />
-                      <Legend wrapperStyle={{ paddingTop: '20px' }} />
-                      <Bar
-                        dataKey="percentage"
-                        fill="url(#colorSubject)"
-                        name="Score (%)"
-                        radius={[8, 8, 0, 0]}
-                      />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </Card>
-              </Col>
-            )}
-
-            {filterType !== 'student' && (
-              <Col xs={24} lg={12}>
-                <Card
-                  title={<span style={{ fontSize: '16px', fontWeight: 600 }}>Top 10 Performers</span>}
-                  bodyStyle={{ padding: '24px' }}
-                  style={{
-                    borderRadius: '8px',
-                    boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.03), 0 1px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px 0 rgba(0, 0, 0, 0.02)'
-                  }}
-                >
-                  <ResponsiveContainer width="100%" height={350}>
-                    <BarChart data={dashboardData.topPerformers} layout="vertical" margin={{ top: 20, right: 30, left: 100, bottom: 20 }}>
-                      <defs>
-                        <linearGradient id="colorTop" x1="0" y1="0" x2="1" y2="0">
-                          <stop offset="5%" stopColor="#faad14" stopOpacity={0.8} />
-                          <stop offset="95%" stopColor="#faad14" stopOpacity={0.5} />
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                      <XAxis
-                        type="number"
-                        label={{ value: 'Score (%)', position: 'insideBottom', offset: -10, style: { fill: '#8c8c8c' } }}
-                        tick={{ fill: '#8c8c8c', fontSize: 12 }}
-                      />
-                      <YAxis
-                        dataKey="name"
-                        type="category"
-                        width={90}
-                        interval={0}
-                        tick={{ fill: '#8c8c8c', fontSize: 12 }}
-                      />
-                      <Tooltip
-                        content={<CustomTooltip />}
-                        cursor={{ fill: 'rgba(0, 0, 0, 0.05)' }}
-                      />
-                      <Legend />
-                      <Bar
-                        dataKey="score"
-                        fill="url(#colorTop)"
-                        name="Score (%)"
-                        radius={[0, 8, 8, 0]}
-                      />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </Card>
-              </Col>
-            )}
-          </Row>
+              <Row gutter={[20, 20]}>
+                <Col xs={24}>
+                  <Card
+                    title={
+                      <span style={{ fontSize: '16px', fontWeight: 600, color: '#1e293b' }}>Top 10 Performers</span>
+                    }
+                    bodyStyle={{ padding: '0' }}
+                    style={{
+                      borderRadius: '12px',
+                      border: '1px solid #e2e8f0',
+                      boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)'
+                    }}
+                  >
+                    <div style={{ padding: '16px 24px', borderBottom: '1px solid #e2e8f0', backgroundColor: '#f8fafc' }}>
+                      <Row gutter={16}>
+                        <Col span={2} style={{ fontWeight: 600, fontSize: '13px', color: '#64748b', textTransform: 'uppercase' }}>Rank</Col>
+                        <Col span={6} style={{ fontWeight: 600, fontSize: '13px', color: '#64748b', textTransform: 'uppercase' }}>Student Name</Col>
+                        <Col span={3} style={{ fontWeight: 600, fontSize: '13px', color: '#64748b', textTransform: 'uppercase' }}>Scored Marks</Col>
+                        <Col span={3} style={{ fontWeight: 600, fontSize: '13px', color: '#64748b', textTransform: 'uppercase' }}>Correct</Col>
+                        <Col span={3} style={{ fontWeight: 600, fontSize: '13px', color: '#64748b', textTransform: 'uppercase' }}>Incorrect</Col>
+                        <Col span={3} style={{ fontWeight: 600, fontSize: '13px', color: '#64748b', textTransform: 'uppercase' }}>Skipped</Col>
+                        <Col span={4} style={{ fontWeight: 600, fontSize: '13px', color: '#64748b', textTransform: 'uppercase' }}>Score %</Col>
+                      </Row>
+                    </div>
+                    {dashboardData.topPerformers.map((performer, index) => (
+                      <div
+                        key={index}
+                        style={{
+                          padding: '16px 24px',
+                          borderBottom: index < dashboardData.topPerformers.length - 1 ? '1px solid #e2e8f0' : 'none',
+                          transition: 'background-color 0.2s',
+                          cursor: 'pointer'
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f8fafc'}
+                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                      >
+                        <Row gutter={16} align="middle">
+                          <Col span={2}>
+                            <div style={{
+                              width: '32px',
+                              height: '32px',
+                              borderRadius: '8px',
+                              backgroundColor: index < 3 ? '#fef3c7' : '#f1f5f9',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontWeight: 700,
+                              fontSize: '14px',
+                              color: index < 3 ? '#f59e0b' : '#64748b'
+                            }}>
+                              {index + 1}
+                            </div>
+                          </Col>
+                          <Col span={6}>
+                            <div style={{ fontWeight: 600, fontSize: '14px', color: '#1e293b' }}>{performer.name}</div>
+                          </Col>
+                          <Col span={3}>
+                            <div style={{ fontSize: '14px', color: '#1e293b', fontWeight: 500 }}>
+                              {Math.round((performer.score / 100) * 100)}/100
+                            </div>
+                          </Col>
+                          <Col span={3}>
+                            <div style={{
+                              display: 'inline-block',
+                              padding: '4px 8px',
+                              borderRadius: '6px',
+                              backgroundColor: '#d1fae5',
+                              color: '#065f46',
+                              fontSize: '13px',
+                              fontWeight: 600
+                            }}>
+                              {Math.round((performer.score / 100) * 80)}
+                            </div>
+                          </Col>
+                          <Col span={3}>
+                            <div style={{
+                              display: 'inline-block',
+                              padding: '4px 8px',
+                              borderRadius: '6px',
+                              backgroundColor: '#fee2e2',
+                              color: '#991b1b',
+                              fontSize: '13px',
+                              fontWeight: 600
+                            }}>
+                              {Math.round((100 - performer.score) / 100 * 15)}
+                            </div>
+                          </Col>
+                          <Col span={3}>
+                            <div style={{
+                              display: 'inline-block',
+                              padding: '4px 8px',
+                              borderRadius: '6px',
+                              backgroundColor: '#fef3c7',
+                              color: '#92400e',
+                              fontSize: '13px',
+                              fontWeight: 600
+                            }}>
+                              {Math.round((100 - performer.score) / 100 * 5)}
+                            </div>
+                          </Col>
+                          <Col span={4}>
+                            <span style={{ fontWeight: 700, fontSize: '16px', color: '#0ea5e9' }}>
+                              {performer.score}%
+                            </span>
+                          </Col>
+                        </Row>
+                      </div>
+                    ))}
+                  </Card>
+                </Col>
+              </Row>
+            </>
+          )}
         </>
       )}
     </div>

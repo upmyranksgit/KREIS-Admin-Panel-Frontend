@@ -192,7 +192,7 @@ export const FilterProvider = ({ children }) => {
 
         if (filterType === 'all') return true;
         if (filterType === 'institute') return !!filters.instituteId;
-        if (filterType === 'branch') return !!filters.branchId;
+        if (filterType === 'principal') return !!filters.branchId;
         if (filterType === 'batch') return !!filters.batchId;
         if (filterType === 'student') return !!filters.studentId;
 
@@ -206,13 +206,13 @@ export const FilterProvider = ({ children }) => {
         if (userRole === 'superadmin') {
             filterOptions.push(
                 { value: 'institute', label: 'Institute-wise' },
-                { value: 'branch', label: 'Branch-wise' },
+                { value: 'principal', label: 'Principal-wise' },
                 { value: 'batch', label: 'Batch-wise' },
                 { value: 'student', label: 'Individual Student' }
             );
         } else if (userRole === 'instituteadmin') {
             filterOptions.push(
-                { value: 'branch', label: 'Branch-wise' },
+                { value: 'principal', label: 'Principal-wise' },
                 { value: 'batch', label: 'Batch-wise' },
                 { value: 'student', label: 'Individual Student' }
             );
