@@ -3,6 +3,7 @@ import authReducer from './slices/authSlice';
 import dashboardReducer from './slices/dashboardSlice';
 import resultsReducer from './slices/resultsSlice';
 import filtersReducer from './slices/filtersSlice';
+import assessmentReducer from './slices/assessmentSlice';
 
 export const store = configureStore({
   reducer: {
@@ -10,6 +11,7 @@ export const store = configureStore({
     dashboard: dashboardReducer,
     results: resultsReducer,
     filters: filtersReducer,
+    assessment: assessmentReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
