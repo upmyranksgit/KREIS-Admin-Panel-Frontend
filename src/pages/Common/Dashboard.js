@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
-import { Row, Col, Card, Spin, Empty, Select, Typography, Button } from 'antd';
+import { Row, Col, Card, Spin, Empty, Select, Typography } from 'antd';
 import { UserOutlined, TrophyOutlined, RiseOutlined, AimOutlined, CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { assessmentService } from '../../services/assessmentService';
@@ -530,22 +530,6 @@ const Dashboard = () => {
     }
 
     return filterInputs;
-  };
-
-  const CustomTooltip = ({ active, payload }) => {
-    if (active && payload && payload.length) {
-      return (
-        <div style={{
-          backgroundColor: 'white',
-          padding: '10px',
-          border: '1px solid #ccc',
-          borderRadius: '4px'
-        }}>
-          <p style={{ margin: 0 }}>{`${payload[0].name}: ${payload[0].value}`}</p>
-        </div>
-      );
-    }
-    return null;
   };
 
   return (

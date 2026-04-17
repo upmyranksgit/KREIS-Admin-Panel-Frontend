@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Form, Input, InputNumber, Select, Button, Card, Space, message, Tabs, Tag, Modal } from 'antd';
+import { Form, Input, InputNumber, Select, Button, Card, Space, message, Tabs } from 'antd';
 import { PlusOutlined, DeleteOutlined, SaveOutlined, ArrowLeftOutlined } from '@ant-design/icons';
 import { useNavigate, useParams } from 'react-router-dom';
 import { assessmentService } from '../../services/assessmentService';
@@ -37,6 +37,7 @@ const CreateTestPattern = () => {
     if (id) {
       fetchPatternDetails();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   const fetchGrades = async () => {

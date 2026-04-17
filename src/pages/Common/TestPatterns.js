@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Table, Card, Button, message, Input, Select, Space, Tag, Modal, Dropdown } from 'antd';
+import { Table, Card, Button, message, Input, Space, Dropdown, Modal, Tag } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, FileAddOutlined, SearchOutlined, MoreOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
@@ -65,6 +65,7 @@ const TestPatterns = () => {
 
   useEffect(() => {
     fetchPatterns(pagination.current, pagination.pageSize);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters]);
 
   const handleTableChange = (newPagination) => {

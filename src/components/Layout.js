@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Layout as AntLayout, Menu, Avatar, Dropdown, Typography, Space, Badge, Divider } from 'antd';
+import { Layout as AntLayout, Menu, Avatar, Dropdown, Typography, Space } from 'antd';
 import {
   UserOutlined,
   LogoutOutlined,

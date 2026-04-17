@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Form, Input, InputNumber, Select, Button, Card, Space, message, DatePicker, TimePicker, Switch, Tabs } from 'antd';
-import { SaveOutlined, ArrowLeftOutlined, EyeOutlined } from '@ant-design/icons';
+import { Form, Input, InputNumber, Select, Button, Card, Space, message, DatePicker, Switch } from 'antd';
+import { SaveOutlined, ArrowLeftOutlined } from '@ant-design/icons';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
+import { useDispatch } from 'react-redux';
 import { assessmentService } from '../../services/assessmentService';
 import { authService } from '../../services/authService';
 import { setTestDetails, resetTestDetails } from '../../store/slices/assessmentSlice';
@@ -15,7 +15,7 @@ const { Option } = Select;
 const CreateTest = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { id, courseId } = useParams();
+  const { id } = useParams();
   const dispatch = useDispatch();
   const [form] = Form.useForm();
   const currentUser = authService.getCurrentUser();
@@ -38,7 +38,6 @@ const CreateTest = () => {
   const [patterns, setPatterns] = useState([]);
   const [selectedPattern, setSelectedPattern] = useState(null);
   const [grades, setGrades] = useState([]);
-  const [subjects, setSubjects] = useState([]);
   const [selectedGrade, setSelectedGrade] = useState(null);
   const [isPasswordProtected, setIsPasswordProtected] = useState(false);
   const [testTypes, setTestTypes] = useState([]);
@@ -55,6 +54,7 @@ const CreateTest = () => {
     return () => {
       dispatch(resetTestDetails());
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, patternId]);
 
   const fetchTestTypes = async () => {
@@ -75,16 +75,7 @@ const CreateTest = () => {
     }
   };
 
-  const fetchSubjects = async (gradeId) => {
-    try {
-      const response = await api.get('/question-bank/subjects', { 
-        params: { courseId: gradeId, page: 1, limit: 100 } 
-      });
-      setSubjects(response.data?.data || []);
-    } catch (error) {
-      message.error('Failed to fetch subjects');
-    }
-  };
+
 
   const fetchPatterns = async (gradeId) => {
     try {
@@ -231,8 +222,6 @@ const CreateTest = () => {
     
     if (testType === 'withpattern') {
       await fetchPatterns(gradeId);
-    } else {
-      await fetchSubjects(gradeId);
     }
   };
 

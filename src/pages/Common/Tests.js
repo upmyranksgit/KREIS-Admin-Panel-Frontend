@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Table, Card, Button, message, Input, Select, Space, Tag, Modal, Dropdown, Switch } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined, SearchOutlined, MoreOutlined, ExclamationCircleOutlined, CopyOutlined, PrinterOutlined, DownloadOutlined } from '@ant-design/icons';
+import { Table, Card, Button, message, Input, Select, Space, Dropdown, Modal, Tag } from 'antd';
+import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined, SearchOutlined, MoreOutlined, ExclamationCircleOutlined, CopyOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { assessmentService } from '../../services/assessmentService';
@@ -71,6 +71,7 @@ const Tests = () => {
 
   useEffect(() => {
     fetchTests(pagination.current, pagination.pageSize);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters]);
 
   const handleTableChange = (newPagination) => {

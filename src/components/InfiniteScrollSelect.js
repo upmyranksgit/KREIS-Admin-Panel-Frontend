@@ -60,8 +60,6 @@ const InfiniteScrollSelect = ({
       const newData = response.data?.data || response.data || [];
       const totalCount = response.data?.total || response.data?.count || 0;
 
-      setTotal(totalCount);
-
       if (pageNum === 1) {
         setOptions(newData);
       } else {
