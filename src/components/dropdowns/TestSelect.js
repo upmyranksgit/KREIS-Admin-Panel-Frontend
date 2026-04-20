@@ -75,6 +75,7 @@ const TestSelect = ({
       disabled={disabled}
       allowClear={allowClear}
       style={style}
+      skipInitialLoad={!category}
       additionalParams={{
         ...(effectiveInstituteId && { instituteId: effectiveInstituteId }),
         ...(effectiveBranchId && { branchId: effectiveBranchId }),

@@ -16,6 +16,7 @@ import debounce from 'lodash/debounce';
  * @param {boolean} disabled - Disable the select
  * @param {boolean} allowClear - Allow clearing selection
  * @param {string} mode - Select mode (default, multiple, tags)
+ * @param {boolean} skipInitialLoad - Skip initial data load (default: false)
  */
 const InfiniteScrollSelect = ({
   fetchData,
@@ -29,7 +30,8 @@ const InfiniteScrollSelect = ({
   disabled = false,
   allowClear = true,
   mode = undefined,
-  style = { width: '100%' }
+  style = { width: '100%' },
+  skipInitialLoad = false
 }) => {
   const [options, setOptions] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -58,8 +60,6 @@ const InfiniteScrollSelect = ({
       const newData = response.data?.data || response.data || [];
       const totalCount = response.data?.total || response.data?.count || 0;
 
-      setTotal(totalCount);
-
       if (pageNum === 1) {
         setOptions(newData);
       } else {
@@ -77,8 +77,10 @@ const InfiniteScrollSelect = ({
 
   // Initial load
   useEffect(() => {
-    loadOptions(1, '');
-  }, [loadOptions]);
+    if (!skipInitialLoad) {
+      loadOptions(1, '');
+    }
+  }, [loadOptions, skipInitialLoad]);
 
   const handleScroll = (e) => {
     const { target } = e;

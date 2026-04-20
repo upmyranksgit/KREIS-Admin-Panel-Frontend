@@ -16,48 +16,57 @@ const MathRenderer = ({ content }) => {
         const text = node.textContent;
         
         // Check if text contains LaTeX
-        if (text.includes('$$') || text.includes('$')) {
+        if (text.includes('$') || text.includes('$$')) {
           const fragment = document.createDocumentFragment();
           let lastIndex = 0;
           
           // Process display math ($$...$$)
           const displayMathRegex = /\$\$(.*?)\$\$/gs;
-          let match;
-          let processedText = text;
           const replacements = [];
           
           // First, handle display math
-          while ((match = displayMathRegex.exec(text)) !== null) {
+          let displayMatch = displayMathRegex.exec(text);
+          while (displayMatch !== null) {
+            const matchIndex = displayMatch.index;
+            const matchLength = displayMatch[0].length;
+            const matchLatex = displayMatch[1];
             replacements.push({
-              start: match.index,
-              end: match.index + match[0].length,
-              latex: match[1],
+              start: matchIndex,
+              end: matchIndex + matchLength,
+              latex: matchLatex,
               display: true
             });
+            displayMatch = displayMathRegex.exec(text);
           }
           
           // Then handle inline math ($...$) but avoid already processed display math
-          const inlineMathRegex = /\$([^\$]+?)\$/g;
-          while ((match = inlineMathRegex.exec(text)) !== null) {
+          const inlineMathRegex = /\$([^$]+?)\$/g;
+          let inlineMatch = inlineMathRegex.exec(text);
+          while (inlineMatch !== null) {
+            const matchIndex = inlineMatch.index;
+            const matchLength = inlineMatch[0].length;
+            const matchLatex = inlineMatch[1];
+            
             // Check if this match is not inside a display math block
             const isInsideDisplay = replacements.some(r => 
-              match.index >= r.start && match.index < r.end
+              matchIndex >= r.start && matchIndex < r.end
             );
             if (!isInsideDisplay) {
               replacements.push({
-                start: match.index,
-                end: match.index + match[0].length,
-                latex: match[1],
+                start: matchIndex,
+                end: matchIndex + matchLength,
+                latex: matchLatex,
                 display: false
               });
             }
+            inlineMatch = inlineMathRegex.exec(text);
           }
           
           // Sort replacements by start position
           replacements.sort((a, b) => a.start - b.start);
           
           // Build the result
-          replacements.forEach((replacement, idx) => {
+          replacements.forEach((replacement) => {
             // Add text before this math
             if (replacement.start > lastIndex) {
               const textNode = document.createTextNode(text.substring(lastIndex, replacement.start));

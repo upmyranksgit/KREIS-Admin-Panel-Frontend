@@ -43,25 +43,9 @@ export const DashboardProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  }, []);
-
-  // Fetch students for dropdown
-  const fetchStudents = useCallback(async (params) => {
-    try {
-      const response = await assessmentService.getSubmittedTestScore({
-        page: 1,
-        limit: 1000,
-        ...params
-      });
-      setStudents(response.data?.data || []);
-    } catch (err) {
-      console.error('Error fetching students:', err);
-      setStudents([]);
-    }
-  }, []);
-
-  // Process dashboard data based on filter type
-  const processDashboardData = (submissions, filterType) => {
+    
+    // Process dashboard data based on filter type
+    function processDashboardData(submissions, filterType) {
     const totalSubmissions = submissions.length;
     const scores = submissions.map(s => s.percentageScore || 0);
     const avgScore = scores.reduce((a, b) => a + b, 0) / totalSubmissions;
@@ -200,7 +184,23 @@ export const DashboardProvider = ({ children }) => {
       questionAnalysis,
       timeAnalysis
     };
-  };
+  }
+  }, []);
+
+  // Fetch students for dropdown
+  const fetchStudents = useCallback(async (params) => {
+    try {
+      const response = await assessmentService.getSubmittedTestScore({
+        page: 1,
+        limit: 1000,
+        ...params
+      });
+      setStudents(response.data?.data || []);
+    } catch (err) {
+      console.error('Error fetching students:', err);
+      setStudents([]);
+    }
+  }, []);
 
   // Helper function to truncate text
   const truncateText = (text, maxLength) => {

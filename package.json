@@ -3,20 +3,26 @@
   "version": "1.0.0",
   "private": true,
   "dependencies": {
+    "@ant-design/icons": "^5.2.6",
+    "@reduxjs/toolkit": "^2.11.2",
+    "antd": "^5.12.0",
+    "axios": "^1.6.2",
+    "dayjs": "^1.11.10",
+    "katex": "^0.16.9",
+    "moment": "^2.30.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-katex": "^3.0.1",
+    "react-redux": "^9.2.0",
     "react-router-dom": "^6.20.0",
-    "axios": "^1.6.2",
-    "antd": "^5.12.0",
-    "recharts": "^2.10.0",
-    "dayjs": "^1.11.10",
-    "@ant-design/icons": "^5.2.6",
-    "katex": "^0.16.9",
-    "react-katex": "^3.0.1"
+    "recharts": "^2.10.0"
   },
   "scripts": {
     "start": "react-scripts start",
-    "build": "react-scripts build",
+    "build": "node scripts/versioned-build.js",
+    "build:simple": "node scripts/versioned-build-simple.js",
+    "build:detailed": "node scripts/versioned-build-with-buildnum.js",
+    "build:default": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },
@@ -24,7 +30,15 @@
     "react-scripts": "5.0.1"
   },
   "browserslist": {
-    "production": [">0.2%", "not dead", "not op_mini all"],
-    "development": ["last 1 chrome version", "last 1 firefox version", "last 1 safari version"]
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
   }
 }

@@ -1,8 +1,8 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { DashboardOutlined, FileTextOutlined } from '@ant-design/icons';
+import { DashboardOutlined, FileTextOutlined, FileProtectOutlined, FileDoneOutlined } from '@ant-design/icons';
 import Layout from '../components/Layout';
-import { Dashboard as OverviewPage, Results } from './Common';
+import { Dashboard as OverviewPage, Results, TestPatterns, Tests, CreateTestPattern, CreateTest } from './Common';
 import { authService } from '../services/authService';
 
 const Dashboard = () => {
@@ -21,7 +21,7 @@ const Dashboard = () => {
     },
     branchadmin: {
       basePath: '/branch',
-      title: 'Branch Dashboard'
+      title: 'Principal Dashboard'
     },
     teacher: {
       basePath: '/institute',
@@ -29,7 +29,7 @@ const Dashboard = () => {
     },
     student: {
       basePath: '/branch',
-      title: 'Branch Dashboard'
+      title: 'Principal Dashboard'
     }
   };
 
@@ -38,9 +38,9 @@ const Dashboard = () => {
 
   const menuItems = [
     { key: `${basePath}/overview`, icon: <DashboardOutlined />, label: 'Dashboard' },
-    { key: `${basePath}/results`, icon: <FileTextOutlined />, label: 'Results' }
-    // Test Management temporarily hidden
-    // { key: `${basePath}/tests`, icon: <BarChartOutlined />, label: userRole === 'superadmin' || userRole === 'instituteadmin' ? 'Test Management' : 'Tests' }
+    { key: `${basePath}/results`, icon: <FileTextOutlined />, label: 'Results' },
+    { key: `${basePath}/test-patterns`, icon: <FileProtectOutlined />, label: 'Test Patterns' },
+    { key: `${basePath}/tests`, icon: <FileDoneOutlined />, label: 'All Assessments' }
   ];
 
   return (
@@ -49,8 +49,13 @@ const Dashboard = () => {
         <Route path="/" element={<Navigate to={`${basePath}/overview`} replace />} />
         <Route path="/overview" element={<OverviewPage />} />
         <Route path="/results" element={<Results />} />
-        {/* Test Management route temporarily hidden */}
-        {/* <Route path="/tests" element={testComponent} /> */}
+        <Route path="/test-patterns" element={<TestPatterns />} />
+        <Route path="/test-patterns/create" element={<CreateTestPattern />} />
+        <Route path="/test-patterns/edit/:id" element={<CreateTestPattern />} />
+        <Route path="/tests" element={<Tests />} />
+        <Route path="/tests/create" element={<CreateTest />} />
+        <Route path="/tests/edit/:id/:courseId" element={<CreateTest />} />
+        <Route path="/tests/view/:id/:courseId" element={<CreateTest />} />
       </Routes>
     </Layout>
   );
