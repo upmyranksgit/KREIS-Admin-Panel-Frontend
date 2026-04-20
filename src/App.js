@@ -1,10 +1,12 @@
 import React, { useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
 import { ConfigProvider } from 'antd';
+import { useDispatch } from 'react-redux';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import ProtectedRoute from './components/ProtectedRoute';
 import { authService } from './services/authService';
+import { setUser, logout } from './store/slices/authSlice';
 import { FilterProvider, DashboardProvider, ResultsProvider } from './context';
 import { theme } from './theme/antd-theme';
 
@@ -32,6 +34,29 @@ function RootRedirect() {
 }
 
 function App() {
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    const initializeAuth = async () => {
+      const refreshToken = authService.getRefreshToken();
+      if (refreshToken) {
+        try {
+          console.log('Refreshing token on app mount...');
+          const data = await authService.refreshToken();
+          if (data && data.user) {
+            dispatch(setUser(data.user));
+            console.log('User state restored successfully');
+          }
+        } catch (error) {
+          console.error('Failed to refresh token on mount:', error);
+          dispatch(logout());
+        }
+      }
+    };
+
+    initializeAuth();
+  }, [dispatch]);
+
   return (
     <ConfigProvider theme={theme}>
       <FilterProvider>

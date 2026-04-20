@@ -25,7 +25,15 @@ export const authService = {
     }
 
     try {
-      const response = await api.post('/auth/refresh-token', { refreshToken });
+      const token = localStorage.getItem('token');
+      const response = await api.post('/auth/refresh-token', 
+        { refreshToken },
+        { 
+          headers: { 
+            'Authorization': `Bearer ${token}` 
+          } 
+        }
+      );
       
       if (response.data?.data?.token) {
         localStorage.setItem('token', response.data.data.token);

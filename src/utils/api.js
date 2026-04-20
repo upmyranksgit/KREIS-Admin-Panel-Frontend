@@ -86,10 +86,17 @@ api.interceptors.response.use(
         }
 
         try {
+          const token = localStorage.getItem('token');
           // Call refresh token endpoint
-          const response = await axios.post(`${API_BASE_URL}/auth/refresh-token`, {
-            refreshToken
-          });
+          const response = await axios.post(`${API_BASE_URL}/auth/refresh-token`, 
+            { refreshToken },
+            { 
+              headers: { 
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              } 
+            }
+          );
 
           if (response.data?.data?.token) {
             const newToken = response.data.data.token;
